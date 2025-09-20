@@ -6,11 +6,39 @@ import com.novasemp.cnpj.model.Empresa;
 import spark.Spark;
 
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Api {
+
+    // Método auxiliar para logar dados disponíveis
+    private static void logDadosDisponiveis(EmpresaDAO empresaDAO) {
+        try {
+            String sql = "SELECT DISTINCT cnae_principal, municipio FROM empresas LIMIT 5";
+            
+            try (Statement stmt = empresaDAO.getConnection().createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                
+                System.out.println("\nDados disponíveis para teste:");
+                System.out.println("CNAE\t\tMunicípio");
+                System.out.println("-------------------------");
+                
+                while (rs.next()) {
+                    String cnae = rs.getString("cnae_principal");
+                    String municipio = rs.getString("municipio");
+                    System.out.println(cnae + "\t" + municipio);
+                }
+                System.out.println("-------------------------");
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao consultar dados: " + e.getMessage());
+        }
+    }
+
     public static void main(String[] args) {
         // Configurar o banco de dados
         String dbPath = "data/processed/cnpj_data.db";
@@ -23,10 +51,13 @@ public class Api {
             return;
         }
 
+        // Log dos dados disponíveis
+        logDadosDisponiveis(empresaDAO);
+
         Gson gson = new Gson();
 
         // Configurar porta
-        Spark.port(4567);
+        Spark.port(8081);
 
         // Habilitar CORS
         Spark.before((request, response) -> {
@@ -142,12 +173,7 @@ public class Api {
             }
         });
 
-        Spark.get("/health", (req, res) -> {
-            res.type("application/json");
-            return "{\"status\": \"API está funcionando\"}";
-        });
-
-        System.out.println("API rodando em http://localhost:4567");
+        System.out.println("API rodando em http://localhost:8081");
         System.out.println("Endpoints disponíveis:");
         System.out.println("  GET /health");
         System.out.println("  GET /empresas/count?cnae=XXXXXXX&municipio=NOME");
