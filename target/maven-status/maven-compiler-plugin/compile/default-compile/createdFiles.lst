@@ -1,1 +1,3 @@
 com\novasemp\cnpj\CnpjDataSampler.class
+com\novasemp\cnpj\dao\EmpresaDAO.class
+com\novasemp\cnpj\model\Empresa.class
