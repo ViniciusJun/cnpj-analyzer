@@ -17,6 +17,7 @@ public class Api {
         EmpresaDAO empresaDAO;
         try {
             empresaDAO = new EmpresaDAO(dbPath);
+            System.out.println("Conectado ao banco de dados com sucesso!");
         } catch (SQLException e) {
             System.err.println("Erro ao conectar ao banco de dados: " + e.getMessage());
             return;
@@ -34,6 +35,12 @@ public class Api {
             response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
         });
 
+        // Endpoint de health check
+        Spark.get("/health", (req, res) -> {
+            res.type("application/json");
+            return "{\"status\": \"API está funcionando\", \"endpoints\": [\"/empresas/count\", \"/empresas/avg-capital\", \"/empresas\", \"/dashboard\"]}";
+        });
+
         // Definir endpoints
         Spark.get("/empresas/count", (req, res) -> {
             String cnae = req.queryParams("cnae");
@@ -41,15 +48,18 @@ public class Api {
 
             if (cnae == null || municipio == null) {
                 res.status(400);
-                return "Parâmetros 'cnae' e 'municipio' são obrigatórios";
+                res.type("application/json");
+                return "{\"error\": \"Parâmetros 'cnae' e 'municipio' são obrigatórios\"}";
             }
 
             try {
                 int count = empresaDAO.countEmpresasPorCnaeEMunicipio(cnae, municipio);
-                return gson.toJson(count);
+                res.type("application/json");
+                return "{\"count\": " + count + ", \"cnae\": \"" + cnae + "\", \"municipio\": \"" + municipio + "\"}";
             } catch (SQLException e) {
                 res.status(500);
-                return "Erro ao acessar o banco de dados: " + e.getMessage();
+                res.type("application/json");
+                return "{\"error\": \"Erro ao acessar o banco de dados: " + e.getMessage() + "\"}";
             }
         });
 
@@ -59,15 +69,18 @@ public class Api {
 
             if (cnae == null || municipio == null) {
                 res.status(400);
-                return "Parâmetros 'cnae' e 'municipio' são obrigatórios";
+                res.type("application/json");
+                return "{\"error\": \"Parâmetros 'cnae' e 'municipio' são obrigatórios\"}";
             }
 
             try {
                 double avg = empresaDAO.avgCapitalSocialPorCnaeEMunicipio(cnae, municipio);
-                return gson.toJson(avg);
+                res.type("application/json");
+                return "{\"avg_capital_social\": " + avg + ", \"cnae\": \"" + cnae + "\", \"municipio\": \"" + municipio + "\"}";
             } catch (SQLException e) {
                 res.status(500);
-                return "Erro ao acessar o banco de dados: " + e.getMessage();
+                res.type("application/json");
+                return "{\"error\": \"Erro ao acessar o banco de dados: " + e.getMessage() + "\"}";
             }
         });
 
@@ -77,7 +90,8 @@ public class Api {
 
             if (cnae == null || municipio == null) {
                 res.status(400);
-                return "Parâmetros 'cnae' e 'municipio' são obrigatórios";
+                res.type("application/json");
+                return "{\"error\": \"Parâmetros 'cnae' e 'municipio' são obrigatórios\"}";
             }
 
             try {
@@ -86,7 +100,8 @@ public class Api {
                 return gson.toJson(empresas);
             } catch (SQLException e) {
                 res.status(500);
-                return "Erro ao acessar o banco de dados: " + e.getMessage();
+                res.type("application/json");
+                return "{\"error\": \"Erro ao acessar o banco de dados: " + e.getMessage() + "\"}";
             }
         });
 
@@ -96,7 +111,8 @@ public class Api {
 
             if (cnae == null || municipio == null) {
                 res.status(400);
-                return "Parâmetros 'cnae' e 'municipio' são obrigatórios";
+                res.type("application/json");
+                return "{\"error\": \"Parâmetros 'cnae' e 'municipio' são obrigatórios\"}";
             }
 
             try {
@@ -121,12 +137,19 @@ public class Api {
                 return gson.toJson(dashboardData);
             } catch (SQLException e) {
                 res.status(500);
-                return "Erro ao acessar o banco de dados: " + e.getMessage();
+                res.type("application/json");
+                return "{\"error\": \"Erro ao acessar o banco de dados: " + e.getMessage() + "\"}";
             }
+        });
+
+        Spark.get("/health", (req, res) -> {
+            res.type("application/json");
+            return "{\"status\": \"API está funcionando\"}";
         });
 
         System.out.println("API rodando em http://localhost:4567");
         System.out.println("Endpoints disponíveis:");
+        System.out.println("  GET /health");
         System.out.println("  GET /empresas/count?cnae=XXXXXXX&municipio=NOME");
         System.out.println("  GET /empresas/avg-capital?cnae=XXXXXXX&municipio=NOME");
         System.out.println("  GET /empresas?cnae=XXXXXXX&municipio=NOME");
