@@ -64,6 +64,59 @@ public class EmpresaDAO {
         return empresas;
     }
 
+    // NOVOS MÉTODOS ADICIONADOS AQUI
+    
+    public int countEmpresasPorCnaeEMunicipio(String cnae, String municipio) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM empresas WHERE cnae_principal = ? AND municipio = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, cnae);
+            pstmt.setString(2, municipio);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+    public double avgCapitalSocialPorCnaeEMunicipio(String cnae, String municipio) throws SQLException {
+        String sql = "SELECT AVG(capital_social) FROM empresas WHERE cnae_principal = ? AND municipio = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, cnae);
+            pstmt.setString(2, municipio);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+        }
+        return 0.0;
+    }
+
+    public List<Empresa> listarEmpresasPorCnaeEMunicipio(String cnae, String municipio) throws SQLException {
+        List<Empresa> empresas = new ArrayList<>();
+        String sql = "SELECT * FROM empresas WHERE cnae_principal = ? AND municipio = ? LIMIT 100";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, cnae);
+            pstmt.setString(2, municipio);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Empresa empresa = new Empresa(
+                        rs.getString("cnpj_basico"),
+                        rs.getString("cnae_principal"),
+                        rs.getString("cep"),
+                        rs.getString("bairro"),
+                        rs.getString("municipio"),
+                        rs.getDouble("capital_social")
+                    );
+                    empresas.add(empresa);
+                }
+            }
+        }
+        return empresas;
+    }
+
     public void close() throws SQLException {
         if (connection != null) {
             connection.close();
