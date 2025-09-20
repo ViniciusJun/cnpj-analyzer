@@ -22,4 +22,17 @@
             <version>5.7.1</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <mainClass>com.novasemp.cnpj.CnpjDataSampler</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
