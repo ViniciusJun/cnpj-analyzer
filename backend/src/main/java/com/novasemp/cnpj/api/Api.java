@@ -56,7 +56,7 @@ public class Api {
         Gson gson = new Gson();
 
         // Configurar porta
-        Spark.port(8081);
+        Spark.port(8080);
 
         // Habilitar CORS
         Spark.before((request, response) -> {
@@ -172,7 +172,7 @@ public class Api {
             }
         });
 
-        System.out.println("API rodando em http://localhost:8081");
+        System.out.println("API rodando em http://localhost:8080");
         System.out.println("Endpoints disponíveis:");
         System.out.println("  GET /health");
         System.out.println("  GET /empresas/count?cnae=XXXXXXX&municipio=NOME");
