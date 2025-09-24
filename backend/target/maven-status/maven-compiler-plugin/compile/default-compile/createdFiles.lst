@@ -1,0 +1,6 @@
+com\novasemp\cnpj\api\Api.class
+com\novasemp\cnpj\TesteBanco.class
+com\novasemp\cnpj\dao\EmpresaDAO.class
+com\novasemp\cnpj\MapeamentoCnpj.class
+com\novasemp\cnpj\CnpjDataSampler.class
+com\novasemp\cnpj\model\Empresa.class
