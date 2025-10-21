@@ -72,7 +72,7 @@ public class Api {
         Gson gson = new Gson();
 
         // Configurar porta
-        Spark.port(8080);
+        Spark.port(8081);
 
         // Habilitar CORS
         Spark.before((request, response) -> {
