@@ -109,7 +109,73 @@
 
         </androidx.cardview.widget.CardView>
 
-        <!-- Card Estratégias -->
+        <!-- NOVO CARD: Classificação de Sucesso -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:elevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Classificação de Sucesso"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textClassificacao"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Classificação"
+                    android:textSize="18sp"
+                    android:textColor="#9C27B0"
+                    android:layout_marginTop="8dp" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- NOVO CARD: Fatores Críticos -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:elevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Fatores Críticos"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textFatoresCriticos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Carregando fatores..."
+                    android:textSize="14sp"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingExtra="4dp" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Card Estratégias Recomendadas (ATUALIZADO) -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -133,7 +199,7 @@
                     android:id="@+id/textEstrategias"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Carregando..."
+                    android:text="Carregando estratégias..."
                     android:textSize="14sp"
                     android:layout_marginTop="8dp"
                     android:lineSpacingExtra="4dp" />

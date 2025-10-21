@@ -3,6 +3,8 @@ package com.novasemp.cnpj.api;
 import com.google.gson.Gson;
 import com.novasemp.cnpj.dao.EmpresaDAO;
 import com.novasemp.cnpj.model.Empresa;
+import com.novasemp.cnpj.ml.service.MLModelService;
+import com.novasemp.cnpj.ml.model.PredictionResult;
 import spark.Spark;
 
 import java.sql.SQLException;
@@ -41,17 +43,31 @@ public class Api {
     public static void main(String[] args) {
         // Configurar o banco de dados
         String dbPath = "data/processed/cnpj_data.db";
-        EmpresaDAO empresaDAO;
+        
+        // Usar arrays finais para contornar a restrição de variáveis em lambdas
+        final EmpresaDAO[] empresaDAOHolder = new EmpresaDAO[1];
+        final MLModelService[] mlServiceHolder = new MLModelService[1];
+        
         try {
-            empresaDAO = new EmpresaDAO(dbPath);
+            empresaDAOHolder[0] = new EmpresaDAO(dbPath);
             System.out.println("Conectado ao banco de dados com sucesso!");
+            
+            // Inicializar serviço de ML
+            try {
+                mlServiceHolder[0] = new MLModelService(empresaDAOHolder[0].getConnection());
+                System.out.println("Serviço de ML inicializado com sucesso!");
+            } catch (Exception e) {
+                System.err.println("Erro ao inicializar serviço de ML: " + e.getMessage());
+                System.out.println("Continuando sem serviço de ML...");
+            }
+            
         } catch (SQLException e) {
             System.err.println("Erro ao conectar ao banco de dados: " + e.getMessage());
             return;
         }
 
         // Log dos dados disponíveis
-        logDadosDisponiveis(empresaDAO);
+        logDadosDisponiveis(empresaDAOHolder[0]);
 
         Gson gson = new Gson();
 
@@ -68,7 +84,7 @@ public class Api {
         // Endpoint de health check
         Spark.get("/health", (req, res) -> {
             res.type("application/json");
-            return "{\"status\": \"API está funcionando\", \"endpoints\": [\"/empresas/count\", \"/empresas/avg-capital\", \"/empresas\", \"/dashboard\"]}";
+            return "{\"status\": \"API está funcionando\", \"endpoints\": [\"/empresas/count\", \"/empresas/avg-capital\", \"/empresas\", \"/dashboard\", \"/predicao\"]}";
         });
 
         // Definir endpoints
@@ -83,7 +99,7 @@ public class Api {
             }
 
             try {
-                int count = empresaDAO.countEmpresasPorCnaeEMunicipio(cnae, municipio);
+                int count = empresaDAOHolder[0].countEmpresasPorCnaeEMunicipio(cnae, municipio);
                 res.type("application/json");
                 return "{\"count\": " + count + ", \"cnae\": \"" + cnae + "\", \"municipio\": \"" + municipio + "\"}";
             } catch (SQLException e) {
@@ -104,7 +120,7 @@ public class Api {
             }
 
             try {
-                double avg = empresaDAO.avgCapitalSocialPorCnaeEMunicipio(cnae, municipio);
+                double avg = empresaDAOHolder[0].avgCapitalSocialPorCnaeEMunicipio(cnae, municipio);
                 res.type("application/json");
                 return "{\"avg_capital_social\": " + avg + ", \"cnae\": \"" + cnae + "\", \"municipio\": \"" + municipio + "\"}";
             } catch (SQLException e) {
@@ -125,7 +141,7 @@ public class Api {
             }
 
             try {
-                List<Empresa> empresas = empresaDAO.listarEmpresasPorCnaeEMunicipio(cnae, municipio);
+                List<Empresa> empresas = empresaDAOHolder[0].listarEmpresasPorCnaeEMunicipio(cnae, municipio);
                 res.type("application/json");
                 return gson.toJson(empresas);
             } catch (SQLException e) {
@@ -135,9 +151,47 @@ public class Api {
             }
         });
 
+        // Novo endpoint para predição de ML
+        Spark.get("/predicao", (req, res) -> {
+            if (mlServiceHolder[0] == null) {
+                res.status(503);
+                res.type("application/json");
+                return "{\"error\": \"Serviço de ML não disponível\"}";
+            }
+            
+            String cnae = req.queryParams("cnae");
+            String municipio = req.queryParams("municipio");
+            String capitalStr = req.queryParams("capital");
+            
+            if (cnae == null || municipio == null || capitalStr == null) {
+                res.status(400);
+                res.type("application/json");
+                return "{\"error\": \"Parâmetros 'cnae', 'municipio' e 'capital' são obrigatórios\"}";
+            }
+            
+            try {
+                double capitalSocial = Double.parseDouble(capitalStr);
+                PredictionResult predicao = mlServiceHolder[0].preverSucesso(cnae, municipio, capitalSocial, empresaDAOHolder[0].getConnection());
+                
+                res.type("application/json");
+                return gson.toJson(predicao);
+                
+            } catch (NumberFormatException e) {
+                res.status(400);
+                res.type("application/json");
+                return "{\"error\": \"Parâmetro 'capital' deve ser um número válido\"}";
+            } catch (Exception e) {
+                res.status(500);
+                res.type("application/json");
+                return "{\"error\": \"Erro na predição: " + e.getMessage() + "\"}";
+            }
+        });
+
+        // Endpoint dashboard atualizado com ML
         Spark.get("/dashboard", (req, res) -> {
             String cnae = req.queryParams("cnae");
             String municipio = req.queryParams("municipio");
+            String capitalStr = req.queryParams("capital");
 
             if (cnae == null || municipio == null) {
                 res.status(400);
@@ -146,8 +200,11 @@ public class Api {
             }
 
             try {
-                int count = empresaDAO.countEmpresasPorCnaeEMunicipio(cnae, municipio);
-                double avgCapital = empresaDAO.avgCapitalSocialPorCnaeEMunicipio(cnae, municipio);
+                int count = empresaDAOHolder[0].countEmpresasPorCnaeEMunicipio(cnae, municipio);
+                double avgCapital = empresaDAOHolder[0].avgCapitalSocialPorCnaeEMunicipio(cnae, municipio);
+                
+                // Usar capital fornecido ou capital médio como fallback
+                double capitalSocial = capitalStr != null ? Double.parseDouble(capitalStr) : avgCapital;
                 
                 Map<String, Object> dashboardData = new HashMap<>();
                 dashboardData.put("quantidade_empresas", count);
@@ -155,20 +212,61 @@ public class Api {
                 dashboardData.put("cnae", cnae);
                 dashboardData.put("municipio", municipio);
                 
-                // TODO: Adicionar probabilidade e estratégias em iterações futuras
-                dashboardData.put("probabilidade_sucesso", 0.75);
-                dashboardData.put("estrategias", new String[]{
-                    "Analisar concorrência local",
-                    "Estudar perfil demográfico da região",
-                    "Avaliar sazonalidade do negócio"
-                });
+                // Se o serviço de ML estiver disponível, usar predição real
+                if (mlServiceHolder[0] != null) {
+                    try {
+                        PredictionResult predicao = mlServiceHolder[0].preverSucesso(cnae, municipio, capitalSocial, empresaDAOHolder[0].getConnection());
+                        dashboardData.put("probabilidade_sucesso", predicao.getProbabilidadeSucesso());
+                        dashboardData.put("classificacao_sucesso", predicao.getClassificacao());
+                        dashboardData.put("fatores_criticos", predicao.getFatoresCriticos());
+                        dashboardData.put("recomendacao", predicao.getRecomendacao());
+                        
+                        // Combinar estratégias padrão com recomendação do ML
+                        String[] estrategias = new String[]{
+                            "Analisar concorrência local",
+                            "Estudar perfil demográfico da região",
+                            "Avaliar sazonalidade do negócio",
+                            predicao.getRecomendacao()
+                        };
+                        dashboardData.put("estrategias", estrategias);
+                        
+                    } catch (Exception e) {
+                        System.err.println("Erro na predição ML: " + e.getMessage());
+                        // Fallback para valores padrão se ML falhar
+                        dashboardData.put("probabilidade_sucesso", 0.75);
+                        dashboardData.put("classificacao_sucesso", "MEDIA");
+                        dashboardData.put("fatores_criticos", new String[]{"Análise em andamento"});
+                        dashboardData.put("recomendacao", "Considere uma análise de mercado detalhada");
+                        dashboardData.put("estrategias", new String[]{
+                            "Analisar concorrência local",
+                            "Estudar perfil demográfico da região",
+                            "Avaliar sazonalidade do negócio"
+                        });
+                    }
+                } else {
+                    // Fallback se ML não estiver disponível
+                    dashboardData.put("probabilidade_sucesso", 0.75);
+                    dashboardData.put("classificacao_sucesso", "MEDIA");
+                    dashboardData.put("fatores_criticos", new String[]{"Serviço de análise não disponível"});
+                    dashboardData.put("recomendacao", "Realize uma pesquisa de mercado tradicional");
+                    dashboardData.put("estrategias", new String[]{
+                        "Analisar concorrência local",
+                        "Estudar perfil demográfico da região",
+                        "Avaliar sazonalidade do negócio"
+                    });
+                }
                 
                 res.type("application/json");
                 return gson.toJson(dashboardData);
+                
             } catch (SQLException e) {
                 res.status(500);
                 res.type("application/json");
                 return "{\"error\": \"Erro ao acessar o banco de dados: " + e.getMessage() + "\"}";
+            } catch (NumberFormatException e) {
+                res.status(400);
+                res.type("application/json");
+                return "{\"error\": \"Parâmetro 'capital' deve ser um número válido\"}";
             }
         });
 
@@ -178,6 +276,7 @@ public class Api {
         System.out.println("  GET /empresas/count?cnae=XXXXXXX&municipio=NOME");
         System.out.println("  GET /empresas/avg-capital?cnae=XXXXXXX&municipio=NOME");
         System.out.println("  GET /empresas?cnae=XXXXXXX&municipio=NOME");
-        System.out.println("  GET /dashboard?cnae=XXXXXXX&municipio=NOME");
+        System.out.println("  GET /dashboard?cnae=XXXXXXX&municipio=NOME&capital=YYYYY");
+        System.out.println("  GET /predicao?cnae=XXXXXXX&municipio=NOME&capital=YYYYY");
     }
 }

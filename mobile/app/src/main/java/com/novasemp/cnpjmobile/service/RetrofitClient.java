@@ -14,15 +14,26 @@ public class RetrofitClient {
 
     public static Retrofit getClient() {
         if (retrofit == null) {
-            // Configurar interceptor para logging
+            // Configurar interceptor para logging detalhado
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
             OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
             httpClient.addInterceptor(logging);
-            httpClient.connectTimeout(30, TimeUnit.SECONDS);
-            httpClient.readTimeout(30, TimeUnit.SECONDS);
-            httpClient.writeTimeout(30, TimeUnit.SECONDS);
+            httpClient.connectTimeout(60, TimeUnit.SECONDS);
+            httpClient.readTimeout(60, TimeUnit.SECONDS);
+            httpClient.writeTimeout(60, TimeUnit.SECONDS);
+
+            // Adicionar interceptor para headers
+            httpClient.addInterceptor(chain -> {
+                okhttp3.Request original = chain.request();
+                okhttp3.Request request = original.newBuilder()
+                        .header("User-Agent", "CNPJAnalyzer-Android")
+                        .header("Accept", "application/json")
+                        .method(original.method(), original.body())
+                        .build();
+                return chain.proceed(request);
+            });
 
             retrofit = new Retrofit.Builder()
                     .baseUrl(Constants.BASE_URL)

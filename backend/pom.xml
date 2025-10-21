@@ -50,6 +50,27 @@
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.36</version>
         </dependency>
+
+        <!-- Spark MLLib -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_2.12</artifactId>
+            <version>3.4.1</version>
+        </dependency>
+
+        <!-- Weka -->
+        <dependency>
+            <groupId>nz.ac.waikato.cms.weka</groupId>
+            <artifactId>weka-stable</artifactId>
+            <version>3.8.6</version>
+        </dependency>
+
+        <!-- Jackson Databind -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.15.2</version>
+        </dependency>
     </dependencies>
 
     <build>

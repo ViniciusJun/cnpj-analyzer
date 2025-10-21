@@ -2,5 +2,10 @@ C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\api\Api.ja
 C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\CnpjDataSampler.java
 C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\dao\EmpresaDAO.java
 C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\MapeamentoCnpj.java
+C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\ml\model\EmpresaFeatures.java
+C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\ml\model\PredictionResult.java
+C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\ml\repository\TrainingDataRepository.java
+C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\ml\service\FeatureEngineering.java
+C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\ml\service\MLModelService.java
 C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\model\Empresa.java
 C:\Repositorios\cnpj-analyzer\backend\src\main\java\com\novasemp\cnpj\TesteBanco.java
