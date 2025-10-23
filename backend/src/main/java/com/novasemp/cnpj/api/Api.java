@@ -2,7 +2,9 @@ package com.novasemp.cnpj.api;
 
 import com.google.gson.Gson;
 import com.novasemp.cnpj.dao.EmpresaDAO;
+import com.novasemp.cnpj.dao.HistoricoDAO;
 import com.novasemp.cnpj.model.Empresa;
+import com.novasemp.cnpj.model.HistoricoBusca;
 import com.novasemp.cnpj.ml.service.MLModelService;
 import com.novasemp.cnpj.ml.model.PredictionResult;
 import spark.Spark;
@@ -13,6 +15,7 @@ import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class Api {
 
@@ -47,6 +50,7 @@ public class Api {
         // Usar arrays finais para contornar a restrição de variáveis em lambdas
         final EmpresaDAO[] empresaDAOHolder = new EmpresaDAO[1];
         final MLModelService[] mlServiceHolder = new MLModelService[1];
+        final HistoricoDAO[] historicoDAOHolder = new HistoricoDAO[1];
         
         try {
             empresaDAOHolder[0] = new EmpresaDAO(dbPath);
@@ -60,6 +64,10 @@ public class Api {
                 System.err.println("Erro ao inicializar serviço de ML: " + e.getMessage());
                 System.out.println("Continuando sem serviço de ML...");
             }
+
+            // Inicializar histórico
+            historicoDAOHolder[0] = new HistoricoDAO(empresaDAOHolder[0].getConnection());
+            System.out.println("Sistema de histórico inicializado com sucesso!");
             
         } catch (SQLException e) {
             System.err.println("Erro ao conectar ao banco de dados: " + e.getMessage());
@@ -73,6 +81,9 @@ public class Api {
 
         // Configurar porta
         Spark.port(8081);
+        
+        // Permite conexões externas
+        Spark.ipAddress("0.0.0.0");
 
         // Habilitar CORS
         Spark.before((request, response) -> {
@@ -84,7 +95,7 @@ public class Api {
         // Endpoint de health check
         Spark.get("/health", (req, res) -> {
             res.type("application/json");
-            return "{\"status\": \"API está funcionando\", \"endpoints\": [\"/empresas/count\", \"/empresas/avg-capital\", \"/empresas\", \"/dashboard\", \"/predicao\"]}";
+            return "{\"status\": \"API está funcionando\", \"endpoints\": [\"/empresas/count\", \"/empresas/avg-capital\", \"/empresas\", \"/dashboard\", \"/predicao\", \"/historico/*\"]}";
         });
 
         // Definir endpoints
@@ -187,11 +198,62 @@ public class Api {
             }
         });
 
+        // Endpoint para salvar no histórico
+        Spark.post("/historico/salvar", (req, res) -> {
+            try {
+                HistoricoBusca historico = gson.fromJson(req.body(), HistoricoBusca.class);
+                historicoDAOHolder[0].salvarBusca(historico);
+                
+                res.type("application/json");
+                return "{\"status\": \"salvo\"}";
+                
+            } catch (Exception e) {
+                res.status(500);
+                res.type("application/json");
+                return "{\"error\": \"Erro ao salvar histórico: " + e.getMessage() + "\"}";
+            }
+        });
+
+        // Endpoint para listar histórico
+        Spark.get("/historico/:sessionId", (req, res) -> {
+            String sessionId = req.params(":sessionId");
+            
+            try {
+                List<HistoricoBusca> historicos = historicoDAOHolder[0].listarPorSession(sessionId);
+                res.type("application/json");
+                return gson.toJson(historicos);
+                
+            } catch (SQLException e) {
+                res.status(500);
+                res.type("application/json");
+                return "{\"error\": \"Erro ao carregar histórico: " + e.getMessage() + "\"}";
+            }
+        });
+
+        // Endpoint para deletar do histórico
+        Spark.delete("/historico/:id/:sessionId", (req, res) -> {
+            try {
+                int id = Integer.parseInt(req.params(":id"));
+                String sessionId = req.params(":sessionId");
+                
+                boolean deletado = historicoDAOHolder[0].deletarHistorico(id, sessionId);
+                
+                res.type("application/json");
+                return "{\"deletado\": " + deletado + "}";
+                
+            } catch (Exception e) {
+                res.status(500);
+                res.type("application/json");
+                return "{\"error\": \"Erro ao deletar histórico: " + e.getMessage() + "\"}";
+            }
+        });
+
         // Endpoint dashboard atualizado com ML
         Spark.get("/dashboard", (req, res) -> {
             String cnae = req.queryParams("cnae");
             String municipio = req.queryParams("municipio");
             String capitalStr = req.queryParams("capital");
+            String sessionId = req.queryParams("sessionId");
 
             if (cnae == null || municipio == null) {
                 res.status(400);
@@ -256,6 +318,26 @@ public class Api {
                     });
                 }
                 
+                // Salvar no histórico se sessionId foi fornecido
+                if (sessionId != null && !sessionId.isEmpty()) {
+                    try {
+                        HistoricoBusca historico = new HistoricoBusca(
+                            sessionId,
+                            cnae,
+                            "Desconhecido", // Descrição do CNAE - precisaríamos carregar o mapeamento
+                            municipio, 
+                            "Desconhecido", // Nome do município - precisaríamos carregar o mapeamento
+                            capitalSocial,
+                            count,
+                            avgCapital,
+                            (Double) dashboardData.get("probabilidade_sucesso")
+                        );
+                        historicoDAOHolder[0].salvarBusca(historico);
+                    } catch (SQLException e) {
+                        System.err.println("Erro ao salvar no histórico: " + e.getMessage());
+                    }
+                }
+                
                 res.type("application/json");
                 return gson.toJson(dashboardData);
                 
@@ -270,13 +352,16 @@ public class Api {
             }
         });
 
-        System.out.println("API rodando em http://localhost:8080");
+        System.out.println("API rodando em http://localhost:8081");
         System.out.println("Endpoints disponíveis:");
         System.out.println("  GET /health");
         System.out.println("  GET /empresas/count?cnae=XXXXXXX&municipio=NOME");
         System.out.println("  GET /empresas/avg-capital?cnae=XXXXXXX&municipio=NOME");
         System.out.println("  GET /empresas?cnae=XXXXXXX&municipio=NOME");
-        System.out.println("  GET /dashboard?cnae=XXXXXXX&municipio=NOME&capital=YYYYY");
+        System.out.println("  GET /dashboard?cnae=XXXXXXX&municipio=NOME&capital=YYYYY&sessionId=ZZZZZ");
         System.out.println("  GET /predicao?cnae=XXXXXXX&municipio=NOME&capital=YYYYY");
+        System.out.println("  POST /historico/salvar");
+        System.out.println("  GET /historico/:sessionId");
+        System.out.println("  DELETE /historico/:id/:sessionId");
     }
 }

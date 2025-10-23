@@ -1,11 +1,13 @@
-com\novasemp\cnpj\TesteBanco.class
 com\novasemp\cnpj\dao\EmpresaDAO.class
-com\novasemp\cnpj\MapeamentoCnpj.class
 com\novasemp\cnpj\ml\model\PredictionResult.class
-com\novasemp\cnpj\ml\repository\TrainingDataRepository.class
 com\novasemp\cnpj\CnpjDataSampler.class
+com\novasemp\cnpj\dao\HistoricoDAO.class
 com\novasemp\cnpj\ml\service\FeatureEngineering.class
 com\novasemp\cnpj\model\Empresa.class
+com\novasemp\cnpj\TesteBanco.class
+com\novasemp\cnpj\MapeamentoCnpj.class
+com\novasemp\cnpj\ml\repository\TrainingDataRepository.class
+com\novasemp\cnpj\model\HistoricoBusca.class
 com\novasemp\cnpj\api\Api.class
 com\novasemp\cnpj\ml\service\MLModelService.class
 com\novasemp\cnpj\ml\model\EmpresaFeatures.class

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="@color/background">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Predição com Machine Learning"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="@color/primary"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CNAE:"
+            android:textSize="14sp"
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/editTextCnae"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Código CNAE (ex: 4711301)"
+            android:inputType="number"
+            android:background="@drawable/edittext_background" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Código do Município:"
+            android:textSize="14sp"
+            android:textColor="@color/text_primary"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/editTextMunicipio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Código IBGE (ex: 3550308)"
+            android:inputType="number"
+            android:background="@drawable/edittext_background" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Capital Social (opcional):"
+            android:textSize="14sp"
+            android:textColor="@color/text_primary"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/editTextCapital"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Capital Social (ex: 50000)"
+            android:inputType="numberDecimal"
+            android:background="@drawable/edittext_background" />
+
+        <Button
+            android:id="@+id/buttonAnalisar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Executar Predição ML"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="@color/secondary"
+            android:textColor="@android:color/white"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/textViewResultados"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Os resultados da predição com Machine Learning aparecerão aqui..."
+            android:textSize="13sp"
+            android:lineSpacingExtra="4dp"
+            android:padding="16dp"
+            android:background="@drawable/results_background"
+            android:textColor="@color/text_secondary" />
+
+    </LinearLayout>
+</ScrollView>

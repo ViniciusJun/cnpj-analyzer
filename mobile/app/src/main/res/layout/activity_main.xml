@@ -12,7 +12,8 @@
         android:text="Analisador CNPJ"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:layout_marginBottom="32dp" />
+        android:layout_marginBottom="32dp"
+        />
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
@@ -24,21 +25,41 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Código CNAE (ex: 140)"
-            android:inputType="number" />
+            android:inputType="number"
+            android:maxLines="1"
+            />
 
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp">
+        android:layout_marginBottom="16dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editTextMunicipio"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Código Município (ex: 27)"
-            android:inputType="number" />
+            android:inputType="number"
+            android:maxLines="1"
+            />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp" >
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextCapital"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Capital Social (opcional - ex: 50000)"
+            android:inputType="numberDecimal"
+            android:maxLines="1"
+            />
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -47,6 +68,37 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Analisar Dados"
-        android:textSize="18sp" />
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp"
+        />
+
+    <Button
+        android:id="@+id/btnHistorico"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ver Histórico"
+        android:backgroundTint="#FF9800"
+        android:layout_marginBottom="16dp"
+        />
+
+    <Button
+        android:id="@+id/buttonAnaliseAvancada"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Análise Avançada"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="@color/secondary"
+        android:textColor="@android:color/white"
+        />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dicas: Use os códigos que aparecem no console da API"
+        android:textSize="12sp"
+        android:textColor="#666"
+        android:gravity="center"
+        android:padding="8dp"
+        />
 
 </LinearLayout>
