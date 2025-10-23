@@ -30,11 +30,46 @@ public class DataAnalysisActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_data_analysis);
+        System.out.println("DEBUG: DataAnalysisActivity - onCreate iniciado");
 
-        apiService = RetrofitClient.getApiService();
-        initializeUIComponents();
-        setupButtonListeners();
+        try {
+            System.out.println("DEBUG: Tentando carregar layout...");
+            setContentView(R.layout.activity_data_analysis);
+            System.out.println("DEBUG: Layout carregado com sucesso");
+
+            // Inicializar componentes UI PRIMEIRO (sem dependências externas)
+            initializeUIComponents();
+            System.out.println("DEBUG: Componentes UI inicializados");
+
+            // Configurar listeners
+            setupButtonListeners();
+            System.out.println("DEBUG: Listeners configurados");
+
+            // Tentar inicializar ApiService APÓS a UI estar pronta
+            System.out.println("DEBUG: Tentando inicializar ApiService...");
+            try {
+                apiService = RetrofitClient.getApiService();
+                System.out.println("DEBUG: ApiService inicializado: " + (apiService != null));
+            } catch (Exception e) {
+                System.out.println("DEBUG: AVISO - ApiService não pôde ser inicializado: " + e.getMessage());
+                apiService = null;
+                // Não crasha a app, apenas mostra aviso
+                Toast.makeText(this, "Funcionalidade online indisponível. Usando modo offline.", Toast.LENGTH_LONG).show();
+            }
+
+            System.out.println("DEBUG: DataAnalysisActivity - onCreate concluído com SUCESSO");
+
+        } catch (Exception e) {
+            System.out.println("DEBUG: DataAnalysisActivity - ERRO CRÍTICO: " + e.getMessage());
+            e.printStackTrace();
+
+            String errorMsg = "Erro: " + e.getClass().getSimpleName();
+            if (e.getMessage() != null) {
+                errorMsg += " - " + e.getMessage();
+            }
+            Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
+            finish();
+        }
     }
 
     private void initializeUIComponents() {
@@ -83,37 +118,75 @@ public class DataAnalysisActivity extends AppCompatActivity {
         final String finalMunicipio = municipio;
         final double finalCapital = capital;
 
-        textViewResultados.setText("Executando análise preditiva com Machine Learning...\n\nAguarde...");
+        textViewResultados.setText("Executando análise preditiva...\n\nAguarde...");
         buttonAnalisar.setEnabled(false);
 
-        // Chamada para a API de predição
-        Call<PredicaoResponse> call = apiService.getPredicao(finalCnae, finalMunicipio, finalCapital);
+        // Se ApiService não está disponível, usar apenas simulação
+        if (apiService == null) {
+            System.out.println("DEBUG: ApiService não disponível - usando modo simulador");
+            double finalCapital1 = capital;
+            new android.os.Handler().postDelayed(() -> {
+                String simulationResult = simulateAdvancedAnalysis(cnae, municipio, finalCapital1);
+                textViewResultados.setText("Modo Offline - Dados Simulados:\n\n" + simulationResult);
+                buttonAnalisar.setEnabled(true);
+            }, 2000); // Simular delay de 2 segundos
+            return;
+        }
+
+        System.out.println("DEBUG: Iniciando análise com ML...");
+        tryPredictionML(finalCnae, finalMunicipio, finalCapital);
+    }
+
+    private void tryPredictionML(String cnae, String municipio, double capital) {
+        System.out.println("DEBUG: Tentando endpoint de predição ML...");
+
+        Call<PredicaoResponse> call = apiService.getPredicao(cnae, municipio, capital);
 
         call.enqueue(new Callback<PredicaoResponse>() {
             @Override
             public void onResponse(Call<PredicaoResponse> call, Response<PredicaoResponse> response) {
-                buttonAnalisar.setEnabled(true);
+                System.out.println("DEBUG: Resposta da predição - Código: " + response.code());
+                System.out.println("DEBUG: Resposta da predição - Body: " + response.body());
+                System.out.println("DEBUG: Resposta da predição - É bem-sucedida: " + response.isSuccessful());
 
                 if (response.isSuccessful() && response.body() != null) {
                     PredicaoResponse predicaoResponse = response.body();
-                    if (predicaoResponse.isSuccess()) {
+                    System.out.println("DEBUG: PredicaoResponse - Success: " + predicaoResponse.isSuccess());
+                    System.out.println("DEBUG: PredicaoResponse - Message: " + predicaoResponse.getMessage());
+
+                    // LOG ADICIONAL: Verificar se o objeto data existe
+                    if (predicaoResponse.getData() != null) {
+                        System.out.println("DEBUG: PredicaoResponse - Data: " + predicaoResponse.getData());
+                    } else {
+                        System.out.println("DEBUG: PredicaoResponse - Data é NULL");
+                    }
+
+                    if (predicaoResponse.isSuccess() && predicaoResponse.getData() != null) {
+                        System.out.println("DEBUG: Predição ML bem-sucedida!");
                         displayPredictionResults(predicaoResponse);
                     } else {
-                        textViewResultados.setText("Erro na predição: " + predicaoResponse.getMessage());
+                        System.out.println("DEBUG: Predição ML falhou, tentando dashboard...");
+                        // Se ML falhar, tentar dashboard
+                        textViewResultados.setText("Otimizando análise...\n\nUsando dados consolidados...");
+                        tryDashboardFallback(cnae, municipio, capital);
                     }
                 } else {
-                    // Fallback: buscar dados do dashboard
-                    fetchDashboardDataAsFallback(finalCnae, finalMunicipio, finalCapital);
+                    System.out.println("DEBUG: Resposta não sucedida ou body nulo - tentando dashboard");
+                    tryDashboardFallback(cnae, municipio, capital);
                 }
             }
 
             @Override
             public void onFailure(Call<PredicaoResponse> call, Throwable t) {
-                buttonAnalisar.setEnabled(true);
-                // Fallback: buscar dados do dashboard
-                fetchDashboardDataAsFallback(finalCnae, finalMunicipio, finalCapital);
+                System.out.println("DEBUG: Falha na predição ML: " + t.getMessage());
+                tryDashboardFallback(cnae, municipio, capital);
             }
         });
+    }
+
+    private void tryDashboardFallback(String cnae, String municipio, double capital) {
+        System.out.println("DEBUG: Usando fallback do dashboard...");
+        fetchDashboardDataAsFallback(cnae, municipio, capital);
     }
 
     private void displayPredictionResults(PredicaoResponse response) {
@@ -151,6 +224,7 @@ public class DataAnalysisActivity extends AppCompatActivity {
         results.append("💡 RECOMENDAÇÃO:\n").append(data.getRecomendacao());
 
         textViewResultados.setText(results.toString());
+        buttonAnalisar.setEnabled(true);
     }
 
     private void fetchDashboardDataAsFallback(String cnae, String municipio, double capital) {
@@ -163,17 +237,19 @@ public class DataAnalysisActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     DashboardData dashboardData = response.body();
                     String simulationResult = createEnhancedSimulation(cnae, municipio, capital, dashboardData);
-                    textViewResultados.setText("Dados da predição (com fallback do Dashboard):\n\n" + simulationResult);
+                    textViewResultados.setText("📊 ANÁLISE AVANÇADA (Dados Consolidados)\n\n" + simulationResult);
                 } else {
                     String simulationResult = simulateAdvancedAnalysis(cnae, municipio, capital);
-                    textViewResultados.setText("Usando dados simulados:\n\n" + simulationResult);
+                    textViewResultados.setText("📊 ANÁLISE AVANÇADA (Dados Simulados)\n\n" + simulationResult);
                 }
+                buttonAnalisar.setEnabled(true);
             }
 
             @Override
             public void onFailure(Call<DashboardData> call, Throwable t) {
                 String simulationResult = simulateAdvancedAnalysis(cnae, municipio, capital);
-                textViewResultados.setText("Usando dados simulados:\n\n" + simulationResult);
+                textViewResultados.setText("📊 ANÁLISE AVANÇADA (Dados Simulados)\n\n" + simulationResult);
+                buttonAnalisar.setEnabled(true);
             }
         });
     }
@@ -189,7 +265,6 @@ public class DataAnalysisActivity extends AppCompatActivity {
         String[] estrategias = dashboardData.getEstrategias();
 
         StringBuilder results = new StringBuilder();
-        results.append("🎯 PREDIÇÃO COM MACHINE LEARNING\n\n");
 
         results.append("📊 PROBABILIDADE DE SUCESSO: ")
                 .append(String.format("%.1f", probabilidadeSucesso * 100))
@@ -223,8 +298,7 @@ public class DataAnalysisActivity extends AppCompatActivity {
     }
 
     private String simulateAdvancedAnalysis(String cnae, String municipio, double capital) {
-        return "🎯 PREDIÇÃO COM MACHINE LEARNING\n\n" +
-                "📊 PROBABILIDADE DE SUCESSO: 72.0%\n" +
+        return "📊 PROBABILIDADE DE SUCESSO: 72.0%\n" +
                 "🏷️ CLASSIFICAÇÃO: Potencial Moderado\n\n" +
                 "📈 DADOS DO MERCADO:\n" +
                 "• 245 empresas no segmento\n" +

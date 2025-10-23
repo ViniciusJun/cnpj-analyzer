@@ -3,81 +3,73 @@ package com.novasemp.cnpjmobile.model;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class HistoricoBusca {
     private Integer id;
     private String sessionId;
     private String cnae;
     private String municipio;
-    private Double capital;
+    private Double capitalSocial;
     private String dataBusca;
 
-    // Construtor vazio necessário para o Retrofit
+    // Construtores
     public HistoricoBusca() {}
 
-    // Construtor com parâmetros
-    public HistoricoBusca(String sessionId, String cnae, String municipio, Double capital) {
+    public HistoricoBusca(String sessionId, String cnae, String municipio, Double capitalSocial) {
         this.sessionId = sessionId;
         this.cnae = cnae;
         this.municipio = municipio;
-        this.capital = capital;
-        // Formatar a data como string
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-        this.dataBusca = sdf.format(new Date());
+        this.capitalSocial = capitalSocial;
+        this.dataBusca = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
     }
 
     // Getters e Setters
-    public Integer getId() {
-        return id;
-    }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
+    public String getSessionId() { return sessionId; }
+    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
 
-    public String getSessionId() {
-        return sessionId;
-    }
+    public String getCnae() { return cnae; }
+    public void setCnae(String cnae) { this.cnae = cnae; }
 
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
+    public String getMunicipio() { return municipio; }
+    public void setMunicipio(String municipio) { this.municipio = municipio; }
 
-    public String getCane() {
-        return cnae;
-    }
+    public Double getCapitalSocial() { return capitalSocial; }
+    public void setCapitalSocial(Double capitalSocial) { this.capitalSocial = capitalSocial; }
 
-    public void setCane(String cnae) {
-        this.cnae = cnae;
-    }
+    public String getDataBusca() { return dataBusca; }
+    public void setDataBusca(String dataBusca) { this.dataBusca = dataBusca; }
 
-    public String getMunicipio() {
-        return municipio;
-    }
-
-    public void setMunicipio(String municipio) {
-        this.municipio = municipio;
-    }
-
-    public Double getCapital() {
-        return capital;
-    }
-
-    public void setCapital(Double capital) {
-        this.capital = capital;
-    }
-
-    public String getDataBusca() {
-        return dataBusca;
-    }
-
-    public void setDataBusca(String dataBusca) {
-        this.dataBusca = dataBusca;
-    }
-
-    // Método auxiliar para setar a data atual
     public void setDataBuscaAtual() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-        this.dataBusca = sdf.format(new Date());
+        // Tentar diferentes formatos que o backend pode aceitar
+        String[] formatos = {
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",  // ISO com milliseconds
+                "yyyy-MM-dd'T'HH:mm:ss'Z'",       // ISO sem milliseconds
+                "yyyy-MM-dd HH:mm:ss",            // Formato SQL
+                "yyyy-MM-dd",                     // Apenas data
+                "dd/MM/yyyy HH:mm:ss",            // Formato brasileiro
+                "MM/dd/yyyy HH:mm:ss"             // Formato americano
+        };
+
+        for (String formato : formatos) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat(formato, Locale.getDefault());
+                if (formato.contains("'Z'")) {
+                    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                }
+                this.dataBusca = sdf.format(new Date());
+                System.out.println("DEBUG: HistoricoBusca - Data formatada com '" + formato + "': " + this.dataBusca);
+                return; // Se funcionou, sair do loop
+            } catch (Exception e) {
+                System.out.println("DEBUG: HistoricoBusca - Formato '" + formato + "' falhou: " + e.getMessage());
+            }
+        }
+
+        // Se todos os formatos falharem, usar timestamp
+        this.dataBusca = String.valueOf(System.currentTimeMillis());
+        System.out.println("DEBUG: HistoricoBusca - Usando timestamp: " + this.dataBusca);
     }
 }

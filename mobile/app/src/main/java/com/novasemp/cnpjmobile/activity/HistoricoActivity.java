@@ -100,7 +100,7 @@ public class HistoricoActivity extends AppCompatActivity {
 
             // Localização (CNAE e Município - códigos)
             TextView textLocalizacao = new TextView(this);
-            textLocalizacao.setText("CNAE: " + historico.getCane() + " - Município: " + historico.getMunicipio());
+            textLocalizacao.setText("CNAE: " + historico.getCnae() + " - Município: " + historico.getMunicipio());
             textLocalizacao.setTextSize(16);
             textLocalizacao.setTextColor(Color.BLACK);
             card.addView(textLocalizacao);
@@ -113,9 +113,9 @@ public class HistoricoActivity extends AppCompatActivity {
             card.addView(textData);
 
             // Capital (se disponível)
-            if (historico.getCapital() != null) {
+            if (historico.getCapitalSocial() != null) {
                 TextView textCapital = new TextView(this);
-                textCapital.setText("Capital: R$ " + String.format("%.2f", historico.getCapital()));
+                textCapital.setText("Capital: R$ " + String.format("%.2f", historico.getCapitalSocial()));
                 textCapital.setTextSize(14);
                 textCapital.setTextColor(Color.BLACK);
                 card.addView(textCapital);
@@ -157,10 +157,10 @@ public class HistoricoActivity extends AppCompatActivity {
 
     private void abrirDashboard(HistoricoBusca historico) {
         Intent intent = new Intent(this, DashboardActivity.class);
-        intent.putExtra("CNAE", historico.getCane());
+        intent.putExtra("CNAE", historico.getCnae());
         intent.putExtra("MUNICIPIO", historico.getMunicipio());
-        if (historico.getCapital() != null) {
-            intent.putExtra("CAPITAL", historico.getCapital());
+        if (historico.getCapitalSocial() != null) {
+            intent.putExtra("CAPITAL", historico.getCapitalSocial());
         }
         startActivity(intent);
     }

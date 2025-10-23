@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:hint="Código CNAE (ex: 4711301)"
             android:inputType="number"
-            android:background="@drawable/edittext_background" />
+            android:background="@android:drawable/edit_text" />
 
         <TextView
             android:layout_width="match_parent"
@@ -89,7 +89,7 @@
             android:textSize="13sp"
             android:lineSpacingExtra="4dp"
             android:padding="16dp"
-            android:background="@drawable/results_background"
+            android:background="#EEEEEE"
             android:textColor="@color/text_secondary" />
 
     </LinearLayout>

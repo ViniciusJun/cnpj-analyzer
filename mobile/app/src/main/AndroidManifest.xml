@@ -23,7 +23,10 @@
         <activity
             android:name=".activity.DashboardActivity"
             android:exported="false" />
-            
+
+        <activity android:name=".activity.DataAnalysisActivity"
+            android:label="Análise Avançada" />
+
         <activity
             android:name=".activity.MainActivity"
             android:exported="true">

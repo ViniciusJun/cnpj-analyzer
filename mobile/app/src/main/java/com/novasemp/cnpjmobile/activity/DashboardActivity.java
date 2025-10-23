@@ -77,33 +77,81 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void salvarNoHistorico(DashboardData data) {
+        System.out.println("DEBUG: DashboardActivity - Iniciando salvarNoHistorico");
+
         String sessionId = getIntent().getStringExtra("SESSION_ID");
         String cnae = getIntent().getStringExtra("CNAE");
         String municipio = getIntent().getStringExtra("MUNICIPIO");
         Double capital = getIntent().hasExtra("CAPITAL") ?
                 getIntent().getDoubleExtra("CAPITAL", 0) : null;
 
-        if (sessionId != null) {
-            // Criar objeto HistoricoBusca com os dados disponíveis
+        System.out.println("DEBUG: DashboardActivity - Dados para histórico:");
+        System.out.println("DEBUG:   SessionId: " + sessionId);
+        System.out.println("DEBUG:   CNAE: " + cnae);
+        System.out.println("DEBUG:   Municipio: " + municipio);
+        System.out.println("DEBUG:   Capital: " + capital);
+        System.out.println("DEBUG:   DashboardData: " + (data != null ? "Não nulo" : "Nulo"));
+
+        if (sessionId == null || sessionId.isEmpty()) {
+            System.out.println("DEBUG: DashboardActivity - ERRO: SessionId é nulo ou vazio!");
+            return;
+        }
+
+        if (cnae == null || cnae.isEmpty() || municipio == null || municipio.isEmpty()) {
+            System.out.println("DEBUG: DashboardActivity - ERRO: CNAE ou Municipio são nulos ou vazios!");
+            return;
+        }
+
+        try {
             HistoricoBusca historico = new HistoricoBusca();
             historico.setSessionId(sessionId);
-            historico.setCane(cnae);
+            historico.setCnae(cnae);
             historico.setMunicipio(municipio);
-            historico.setCapital(capital);
+            historico.setCapitalSocial(capital);
             historico.setDataBuscaAtual();
 
-            // Salvar no histórico (operação não crítica - pode falhar silenciosamente)
+            System.out.println("DEBUG: DashboardActivity - HistoricoBusca criado:");
+            System.out.println("DEBUG:   SessionId: " + historico.getSessionId());
+            System.out.println("DEBUG:   CNAE: " + historico.getCnae());
+            System.out.println("DEBUG:   Municipio: " + historico.getMunicipio());
+            System.out.println("DEBUG:   Capital: " + historico.getCapitalSocial());
+            System.out.println("DEBUG:   DataBusca: " + historico.getDataBusca());
+
+            System.out.println("DEBUG: DashboardActivity - Chamando API para salvar histórico...");
+
             RetrofitClient.getApiService().salvarHistorico(historico).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
-                    // Histórico salvo com sucesso (não precisa de feedback)
+                    System.out.println("DEBUG: DashboardActivity - Resposta do salvar histórico:");
+                    System.out.println("DEBUG:   Código HTTP: " + response.code());
+                    System.out.println("DEBUG:   Sucesso: " + response.isSuccessful());
+                    System.out.println("DEBUG:   Mensagem: " + response.message());
+
+                    if (response.isSuccessful()) {
+                        System.out.println("DEBUG: DashboardActivity - ✅ Histórico salvo com SUCESSO!");
+                    } else {
+                        System.out.println("DEBUG: DashboardActivity - ❌ Erro ao salvar histórico. Código: " + response.code());
+                        try {
+                            if (response.errorBody() != null) {
+                                String errorBody = response.errorBody().string();
+                                System.out.println("DEBUG: DashboardActivity - Corpo do erro: " + errorBody);
+                            }
+                        } catch (Exception e) {
+                            System.out.println("DEBUG: DashboardActivity - Erro ao ler corpo de erro: " + e.getMessage());
+                        }
+                    }
                 }
 
                 @Override
                 public void onFailure(Call<Void> call, Throwable t) {
-                    // Falha ao salvar histórico (não crítico - não mostra erro)
+                    System.out.println("DEBUG: DashboardActivity - ❌ FALHA completa ao salvar histórico: " + t.getMessage());
+                    t.printStackTrace();
                 }
             });
+
+        } catch (Exception e) {
+            System.out.println("DEBUG: DashboardActivity - ❌ ERRO inesperado ao salvar histórico: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

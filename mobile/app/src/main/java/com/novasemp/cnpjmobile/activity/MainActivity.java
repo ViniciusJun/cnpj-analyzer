@@ -9,7 +9,11 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.novasemp.cnpjmobile.R;
+import com.novasemp.cnpjmobile.model.HistoricoBusca;
+import com.novasemp.cnpjmobile.service.RetrofitClient;
 import com.novasemp.cnpjmobile.util.SessionManager;
+
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,7 +31,10 @@ public class MainActivity extends AppCompatActivity {
 
         // Inicializar gerenciador de sessão
         sessionManager = new SessionManager(this);
-        
+        String sessionId = sessionManager.getSessionId();
+        System.out.println("DEBUG: MainActivity - SessionId gerado: " + sessionId);
+        System.out.println("DEBUG: MainActivity - SessionManager é null? " + (sessionManager == null));
+
         initViews();
         setupClickListeners();
     }
@@ -111,6 +118,23 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, DataAnalysisActivity.class);
             startActivity(intent);
         });
+    }
+
+    // METODO TEMPORÁRIO:
+    private void testarEndpointHistorico() {
+        new Thread(() -> {
+            try {
+                System.out.println("DEBUG: Testando endpoint de histórico...");
+                Response<Void> response = RetrofitClient.getApiService()
+                        .salvarHistorico(new HistoricoBusca("test", "123", "456", 1000.0))
+                        .execute();
+
+                System.out.println("DEBUG: Teste histórico - Código: " + response.code());
+                System.out.println("DEBUG: Teste histórico - Sucesso: " + response.isSuccessful());
+            } catch (Exception e) {
+                System.out.println("DEBUG: Teste histórico - ERRO: " + e.getMessage());
+            }
+        }).start();
     }
 
     @Override
