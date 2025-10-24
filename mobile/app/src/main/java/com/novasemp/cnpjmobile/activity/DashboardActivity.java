@@ -12,6 +12,7 @@ import com.novasemp.cnpjmobile.R;
 import com.novasemp.cnpjmobile.model.DashboardData;
 import com.novasemp.cnpjmobile.model.HistoricoBusca;
 import com.novasemp.cnpjmobile.service.RetrofitClient;
+import com.novasemp.cnpjmobile.util.HistoricoLocalManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -25,11 +26,13 @@ public class DashboardActivity extends AppCompatActivity {
     private TextView textClassificacao;
     private TextView textFatoresCriticos;
     private TextView textEstrategias;
+    private HistoricoLocalManager historicoLocalManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
+        historicoLocalManager = new HistoricoLocalManager(this);
 
         // Obter parâmetros da MainActivity
         String cnae = getIntent().getStringExtra("CNAE");
@@ -77,13 +80,16 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void salvarNoHistorico(DashboardData data) {
-        System.out.println("DEBUG: DashboardActivity - Iniciando salvarNoHistorico");
+        System.out.println("DEBUG: DashboardActivity - Iniciando salvar No Historico");
 
         String sessionId = getIntent().getStringExtra("SESSION_ID");
         String cnae = getIntent().getStringExtra("CNAE");
         String municipio = getIntent().getStringExtra("MUNICIPIO");
         Double capital = getIntent().hasExtra("CAPITAL") ?
                 getIntent().getDoubleExtra("CAPITAL", 0) : null;
+
+        // Se capital for nulo, usar 0.0
+        double capitalParaHistorico = capital != null ? capital : 0.0;
 
         System.out.println("DEBUG: DashboardActivity - Dados para histórico:");
         System.out.println("DEBUG:   SessionId: " + sessionId);
@@ -107,7 +113,8 @@ public class DashboardActivity extends AppCompatActivity {
             historico.setSessionId(sessionId);
             historico.setCnae(cnae);
             historico.setMunicipio(municipio);
-            historico.setCapitalSocial(capital);
+            historico.setCapitalSocial(capitalParaHistorico);
+            historico.setTipoAnalise("BUSCA_BASICA");
             historico.setDataBuscaAtual();
 
             System.out.println("DEBUG: DashboardActivity - HistoricoBusca criado:");
@@ -116,6 +123,11 @@ public class DashboardActivity extends AppCompatActivity {
             System.out.println("DEBUG:   Municipio: " + historico.getMunicipio());
             System.out.println("DEBUG:   Capital: " + historico.getCapitalSocial());
             System.out.println("DEBUG:   DataBusca: " + historico.getDataBusca());
+            System.out.println("DEBUG: DashboardActivity - TipoAnalise definido: " + historico.getTipoAnalise());
+
+            // SALVAR LOCALMENTE O TIPO DE ANÁLISE
+            String chave = HistoricoLocalManager.gerarChave(sessionId, cnae, municipio, historico.getDataBusca());
+            historicoLocalManager.salvarTipoAnalise(chave, "BUSCA_BASICA");
 
             System.out.println("DEBUG: DashboardActivity - Chamando API para salvar histórico...");
 

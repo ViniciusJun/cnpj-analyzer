@@ -6,6 +6,17 @@ public class PredicaoResponse {
     private boolean success;
     private String message;
     private PredicaoData data;
+
+    // Metodo para debug
+    public void logDebug() {
+        System.out.println("DEBUG: PredicaoResponse - Success: " + success);
+        System.out.println("DEBUG: PredicaoResponse - Message: " + message);
+        System.out.println("DEBUG: PredicaoResponse - Data: " + data);
+        if (data != null) {
+            System.out.println("DEBUG: PredicaoResponse - Data.Probabilidade: " + data.getProbabilidadeSucesso());
+            System.out.println("DEBUG: PredicaoResponse - Data.Classificacao: " + data.getClassificacao());
+        }
+    }
     
     // Getters e Setters
     public boolean isSuccess() {

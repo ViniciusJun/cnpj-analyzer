@@ -1,5 +1,7 @@
 package com.novasemp.cnpjmobile.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -10,8 +12,10 @@ public class HistoricoBusca {
     private String sessionId;
     private String cnae;
     private String municipio;
-    private Double capitalSocial;
+    private Double capitalSocial = 0.0; // Inicializar com 0.0 para evitar null
     private String dataBusca;
+    @SerializedName("tipoAnalise")
+    private String tipoAnalise;
 
     // Construtores
     public HistoricoBusca() {}
@@ -71,5 +75,13 @@ public class HistoricoBusca {
         // Se todos os formatos falharem, usar timestamp
         this.dataBusca = String.valueOf(System.currentTimeMillis());
         System.out.println("DEBUG: HistoricoBusca - Usando timestamp: " + this.dataBusca);
+    }
+
+    public String getTipoAnalise() {
+        return tipoAnalise;
+    }
+
+    public void setTipoAnalise(String tipoAnalise) {
+        this.tipoAnalise = tipoAnalise;
     }
 }
