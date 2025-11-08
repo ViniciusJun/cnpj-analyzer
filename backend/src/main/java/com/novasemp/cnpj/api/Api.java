@@ -393,6 +393,25 @@ public class Api {
             }
         });
 
+        Spark.get("/ml/metricas", (req, res) -> {
+            if (mlServiceHolder[0] != null && mlServiceHolder[0].isModeloTreinado()) {
+                Map<String, Object> metricas = mlServiceHolder[0].getMetricasModelo();
+                
+                // Adicionar informações do sistema
+                metricas.put("timestamp", System.currentTimeMillis());
+                metricas.put("endpoint", "/ml/metricas");
+                
+                res.type("application/json");
+                return gson.toJson(metricas);
+            } else {
+                res.status(503);
+                Map<String, Object> erro = new HashMap<>();
+                erro.put("erro", "Serviço ML não disponível");
+                erro.put("status", mlServiceHolder[0] != null ? mlServiceHolder[0].getStatus() : "NÃO INICIALIZADO");
+                return gson.toJson(erro);
+            }
+        });
+
         // Endpoint dashboard
         Spark.get("/dashboard", (req, res) -> {
             String cnae = req.queryParams("cnae");
@@ -512,4 +531,5 @@ public class Api {
     private static String analisarTendencia(String cnae, String municipio) {
         return "CRESCIMENTO_MODERADO";
     }
+
 }

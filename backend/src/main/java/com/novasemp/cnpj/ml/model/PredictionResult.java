@@ -1,10 +1,35 @@
 package com.novasemp.cnpj.ml.model;
 
+import com.google.gson.annotations.SerializedName;
+import java.util.Arrays;
+import java.util.Map;
+
 public class PredictionResult {
+    
+    @SerializedName("probabilidadeSucesso")
     private double probabilidadeSucesso;
-    private String classificacao; // ALTA, MEDIA, BAIXA
+    
+    @SerializedName("classificacao")
+    private String classificacao;
+    
+    @SerializedName("fatoresCriticos")
     private String[] fatoresCriticos;
+    
+    @SerializedName("recomendacao")
     private String recomendacao;
+    
+    // ✅ NOVOS CAMPOS
+    @SerializedName("metricasAvancadas")
+    private Map<String, Double> metricasAvancadas;
+    
+    @SerializedName("modeloUtilizado")
+    private String modeloUtilizado;
+    
+    @SerializedName("dadosReais")
+    private boolean dadosReais;
+    
+    @SerializedName("confiancaModelo")
+    private double confiancaModelo;
     
     public PredictionResult() {}
     
@@ -27,4 +52,29 @@ public class PredictionResult {
     
     public String getRecomendacao() { return recomendacao; }
     public void setRecomendacao(String recomendacao) { this.recomendacao = recomendacao; }
+    
+    public Map<String, Double> getMetricasAvancadas() { return metricasAvancadas; }
+    public void setMetricasAvancadas(Map<String, Double> metricasAvancadas) { this.metricasAvancadas = metricasAvancadas; }
+    
+    public String getModeloUtilizado() { return modeloUtilizado; }
+    public void setModeloUtilizado(String modeloUtilizado) { this.modeloUtilizado = modeloUtilizado; }
+    
+    public boolean isDadosReais() { return dadosReais; }
+    public void setDadosReais(boolean dadosReais) { this.dadosReais = dadosReais; }
+    
+    public double getConfiancaModelo() { return confiancaModelo; }
+    public void setConfiancaModelo(double confiancaModelo) { this.confiancaModelo = confiancaModelo; }
+
+    @Override
+    public String toString() {
+        return "PredictionResult{" +
+                "probabilidadeSucesso=" + probabilidadeSucesso +
+                ", classificacao='" + classificacao + '\'' +
+                ", fatoresCriticos=" + Arrays.toString(fatoresCriticos) +
+                ", recomendacao='" + recomendacao + '\'' +
+                ", modeloUtilizado='" + modeloUtilizado + '\'' +
+                ", dadosReais=" + dadosReais +
+                ", confiancaModelo=" + confiancaModelo +
+                '}';
+    }
 }
