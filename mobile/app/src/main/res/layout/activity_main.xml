@@ -91,6 +91,15 @@
         android:textColor="@android:color/white"
         />
 
+    <Button
+        android:id="@+id/buttonUsarLocalizacao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📍 Usar Minha Localização"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#2196F3"
+        android:textColor="#FFFFFF" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
