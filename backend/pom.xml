@@ -8,6 +8,7 @@
     <groupId>com.novasemp</groupId>
     <artifactId>cnpj-analyzer</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -78,7 +79,7 @@
                 </configuration>
             </plugin>
             
-            <!-- ✅ PLUGIN CORRIGIDO: Para criar JAR executável -->
+            <!-- ✅ PLUGIN CORRETO PARA JAR EXECUTÁVEL -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
