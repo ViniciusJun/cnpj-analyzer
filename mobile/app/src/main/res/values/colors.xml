@@ -1,10 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Cores principais -->
     <color name="primary">#2196F3</color>
+    <color name="primary_dark">#1976D2</color>
+    <color name="primary_light">#BBDEFB</color>
+
+    <!-- Cores secundárias -->
     <color name="secondary">#FF9800</color>
+    <color name="secondary_dark">#F57C00</color>
+    <color name="secondary_light">#FFE0B2</color>
+
+    <!-- Cores de acento -->
+    <color name="accent">#FF4081</color>
+
+    <!-- Cores de fundo -->
     <color name="background">#F5F5F5</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="error">#F44336</color>
+
+    <!-- Cores de texto -->
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#757575</color>
+    <color name="text_hint">#BDBDBD</color>
+    <color name="text_on_primary">#FFFFFF</color>
+    <color name="text_on_secondary">#FFFFFF</color>
+
+    <!-- Cores para status -->
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FF9800</color>
+    <color name="info">#2196F3</color>
+    <color name="danger">#F44336</color>
+
+    <!-- Cores para classificação ML -->
+    <color name="ml_high">#4CAF50</color>
+    <color name="ml_medium">#FF9800</color>
+    <color name="ml_low">#F44336</color>
+
+    <!-- Cores neutras -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="gray_light">#E0E0E0</color>
+    <color name="gray">#9E9E9E</color>
+    <color name="gray_dark">#616161</color>
 </resources>

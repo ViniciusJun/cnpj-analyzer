@@ -45,16 +45,37 @@ public class EmpresaFeatures {
     public int getFaixaCapitalSocial() { return faixaCapitalSocial; }
     public void setFaixaCapitalSocial(int faixaCapitalSocial) { this.faixaCapitalSocial = faixaCapitalSocial; }
     
-    // Método para converter features em array para o modelo
+    // Método para converter features em array para o modelo (CORRIGIDO)
     public double[] toFeatureArray() {
+        // Converter CNAE e município para valores numéricos de forma segura
+        double cnaeNumerico = 0.0;
+        double municipioNumerico = 0.0;
+        
+        try {
+            // Extrair parte numérica do CNAE (ex: "4721102" -> 4721102.0)
+            String cnaeClean = cnaePrincipal.replaceAll("[^0-9]", "");
+            if (!cnaeClean.isEmpty()) {
+                cnaeNumerico = Double.parseDouble(cnaeClean);
+            } else {
+                cnaeNumerico = (double) cnaePrincipal.hashCode();
+            }
+            
+            // Converter município para hash numérico
+            municipioNumerico = (double) municipio.hashCode();
+        } catch (NumberFormatException e) {
+            System.err.println("Erro na conversão de CNAE: " + cnaePrincipal);
+            cnaeNumerico = (double) cnaePrincipal.hashCode();
+            municipioNumerico = (double) municipio.hashCode();
+        }
+        
         return new double[] {
-            Double.parseDouble(cnaePrincipal),
-            Double.parseDouble(municipio),
+            cnaeNumerico,
+            municipioNumerico,
             capitalSocial,
-            quantidadeEmpresasRegiao,
+            (double) quantidadeEmpresasRegiao,
             capitalMedioRegiao,
             densidadeEmpresarial,
-            faixaCapitalSocial
+            (double) faixaCapitalSocial
         };
     }
 }

@@ -1,190 +1,157 @@
 package com.novasemp.cnpjmobile.activity;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
-import androidx.annotation.NonNull;
+
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.novasemp.cnpjmobile.R;
-import com.novasemp.cnpjmobile.dialog.AppLocationManager;
-import com.novasemp.cnpjmobile.util.SessionManager;
+import com.novasemp.cnpjmobile.service.ApiService;
+import com.novasemp.cnpjmobile.service.RetrofitClient;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private EditText editTextCnae;
-    private EditText editTextMunicipio;
-    private EditText editTextCapital;
-    private Button buttonBuscar;
-    private Button buttonHistorico;
-    private Button buttonUsarLocalizacao;
-    private SessionManager sessionManager;
+    private static final String TAG = "MainActivity";
 
-    private static final int LOCATION_PERMISSION_REQUEST = 1001;
+    private EditText editCnae, editMunicipio, editCapitalSocial;
+    private Button btnBuscar, btnAnaliseAvancada, btnHistorico, btnDashboard;
+    private TextView textStatusBackend, textStatusML;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        sessionManager = new SessionManager(this);
-        String sessionId = sessionManager.getSessionId();
-        System.out.println("DEBUG: MainActivity - SessionId gerado: " + sessionId);
-
         initViews();
         setupClickListeners();
+        testarConexaoBackend();
     }
 
     private void initViews() {
-        editTextCnae = findViewById(R.id.editTextCnae);
-        editTextMunicipio = findViewById(R.id.editTextMunicipio);
-        editTextCapital = findViewById(R.id.editTextCapital);
-        buttonBuscar = findViewById(R.id.buttonBuscar);
-        buttonHistorico = findViewById(R.id.btnHistorico);
-        buttonUsarLocalizacao = findViewById(R.id.buttonUsarLocalizacao);
+        editCnae = findViewById(R.id.editCnae);
+        editMunicipio = findViewById(R.id.editMunicipio);
+        editCapitalSocial = findViewById(R.id.editCapitalSocial);
+
+        btnBuscar = findViewById(R.id.btnBuscar);
+        btnAnaliseAvancada = findViewById(R.id.btnAnaliseAvancada);
+        btnHistorico = findViewById(R.id.btnHistorico);
+        btnDashboard = findViewById(R.id.btnDashboard);
+
+        textStatusBackend = findViewById(R.id.textStatusBackend);
+        textStatusML = findViewById(R.id.textStatusML);
     }
 
     private void setupClickListeners() {
-        buttonHistorico.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, HistoricoActivity.class);
-            startActivity(intent);
-        });
-
-        Button buttonAnaliseAvancada = findViewById(R.id.buttonAnaliseAvancada);
-        buttonAnaliseAvancada.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, DataAnalysisActivity.class);
-            startActivity(intent);
-        });
-
-        // BOTÃO NOVO: Usar Localização
-        buttonUsarLocalizacao.setOnClickListener(v -> {
-            usarLocalizacao();
-        });
-
-        buttonBuscar.setOnClickListener(v -> {
-            realizarBusca();
-        });
+        btnBuscar.setOnClickListener(v -> buscarDadosBasicos());
+        btnAnaliseAvancada.setOnClickListener(v -> iniciarAnaliseAvancada());
+        btnHistorico.setOnClickListener(v -> abrirHistorico());
+        btnDashboard.setOnClickListener(v -> abrirDashboard());
     }
 
-    private void usarLocalizacao() {
-        // Verificar se já tem permissão
-        if (hasLocationPermission()) {
-            mostrarDialogoLocalizacao();
-        } else {
-            // Solicitar permissão
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                    },
-                    LOCATION_PERMISSION_REQUEST
-            );
-        }
-    }
+    private void buscarDadosBasicos() {
+        String cnae = editCnae.getText().toString().trim();
+        String municipio = editMunicipio.getText().toString().trim();
+        String capitalStr = editCapitalSocial.getText().toString().trim();
 
-    private boolean hasLocationPermission() {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void mostrarDialogoLocalizacao() {
-        AppLocationManager appLocationManager = new AppLocationManager(this, new AppLocationManager.LocationDialogListener() {
-            @Override
-            public void onLocationConfirmed(String municipio) {
-                editTextMunicipio.setText(municipio);
-                Toast.makeText(MainActivity.this, "Município definido: " + municipio, Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onLocationCancelled() {
-                Toast.makeText(MainActivity.this, "Busca por localização cancelada", Toast.LENGTH_SHORT).show();
-            }
-        });
-        appLocationManager.show();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == LOCATION_PERMISSION_REQUEST) {
-            boolean permissionGranted = false;
-
-            // Verificar se alguma permissão foi concedida
-            for (int result : grantResults) {
-                if (result == PackageManager.PERMISSION_GRANTED) {
-                    permissionGranted = true;
-                    break;
-                }
-            }
-
-            if (permissionGranted) {
-                // Permissão concedida
-                mostrarDialogoLocalizacao();
-            } else {
-                // Permissão negada
-                Toast.makeText(this,
-                        "Permissão de localização negada. Digite o município manualmente.",
-                        Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    private void realizarBusca() {
-        String cnae = editTextCnae.getText().toString().trim();
-        String municipio = editTextMunicipio.getText().toString().trim();
-        String capitalStr = editTextCapital.getText().toString().trim();
-
-        // Validações básicas
         if (cnae.isEmpty() || municipio.isEmpty()) {
-            Toast.makeText(this, "Preencha pelo menos CNAE e Município", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Preencha CNAE e Município", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (!cnae.matches("\\d+") || !municipio.matches("\\d+")) {
-            Toast.makeText(this, "CNAE e Município devem ser códigos numéricos", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        double capitalSocial = capitalStr.isEmpty() ? 0.0 : Double.parseDouble(capitalStr);
 
-        Double capital = null;
-        if (!capitalStr.isEmpty()) {
-            try {
-                capital = Double.parseDouble(capitalStr);
-                if (capital < 0) {
-                    Toast.makeText(this, "Capital social não pode ser negativo", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            } catch (NumberFormatException e) {
-                Toast.makeText(this, "Capital social deve ser um número válido", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-
-        String sessionId = sessionManager.getSessionId();
-
-        Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
-        intent.putExtra("CNAE", cnae);
-        intent.putExtra("MUNICIPIO", municipio);
-        intent.putExtra("SESSION_ID", sessionId);
-
-        if (capital != null) {
-            intent.putExtra("CAPITAL", capital);
-        }
-
+        Intent intent = new Intent(this, DashboardActivity.class);
+        intent.putExtra("cnae", cnae);
+        intent.putExtra("municipio", municipio);
+        intent.putExtra("capitalSocial", capitalSocial);
         startActivity(intent);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+    private void iniciarAnaliseAvancada() {
+        String cnae = editCnae.getText().toString().trim();
+        String municipio = editMunicipio.getText().toString().trim();
+        String capitalStr = editCapitalSocial.getText().toString().trim();
+
+        if (cnae.isEmpty() || municipio.isEmpty()) {
+            Toast.makeText(this, "Preencha CNAE e Município", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        double capitalSocial = capitalStr.isEmpty() ? 0.0 : Double.parseDouble(capitalStr);
+
+        Intent intent = new Intent(this, DataAnalysisActivity.class);
+        intent.putExtra("cnae", cnae);
+        intent.putExtra("municipio", municipio);
+        intent.putExtra("capitalSocial", capitalSocial);
+        startActivity(intent);
+    }
+
+    private void abrirHistorico() {
+        Intent intent = new Intent(this, HistoricoActivity.class);
+        startActivity(intent);
+    }
+
+    private void abrirDashboard() {
+        // Dashboard geral sem parâmetros específicos
+        Intent intent = new Intent(this, DashboardActivity.class);
+        startActivity(intent);
+    }
+
+    private void testarConexaoBackend() {
+        ApiService apiService = RetrofitClient.getApiService();
+
+        apiService.healthCheck().enqueue(new Callback<Object>() {
+            @Override
+            public void onResponse(Call<Object> call, Response<Object> response) {
+                if (response.isSuccessful()) {
+                    textStatusBackend.setText("Conectado ✅");
+                    textStatusBackend.setTextColor(getColor(android.R.color.holo_green_dark));
+                    testarStatusML();
+                } else {
+                    textStatusBackend.setText("Erro ❌");
+                    textStatusBackend.setTextColor(getColor(android.R.color.holo_red_dark));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Object> call, Throwable t) {
+                textStatusBackend.setText("Offline ❌");
+                textStatusBackend.setTextColor(getColor(android.R.color.holo_red_dark));
+                textStatusML.setText("Indisponível");
+                Log.e(TAG, "Falha na conexão: " + t.getMessage());
+            }
+        });
+    }
+
+    private void testarStatusML() {
+        ApiService apiService = RetrofitClient.getApiService();
+
+        apiService.debugML().enqueue(new Callback<Object>() {
+            @Override
+            public void onResponse(Call<Object> call, Response<Object> response) {
+                if (response.isSuccessful()) {
+                    textStatusML.setText("Online ✅");
+                    textStatusML.setTextColor(getColor(android.R.color.holo_green_dark));
+                } else {
+                    textStatusML.setText("Erro ⚠️");
+                    textStatusML.setTextColor(getColor(android.R.color.holo_orange_dark));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Object> call, Throwable t) {
+                textStatusML.setText("Offline ❌");
+                textStatusML.setTextColor(getColor(android.R.color.holo_red_dark));
+            }
+        });
     }
 }

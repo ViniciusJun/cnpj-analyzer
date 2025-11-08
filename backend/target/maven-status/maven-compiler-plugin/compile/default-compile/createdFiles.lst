@@ -3,7 +3,9 @@ com\novasemp\cnpj\ml\model\PredictionResult.class
 com\novasemp\cnpj\CnpjDataSampler.class
 com\novasemp\cnpj\dao\HistoricoDAO.class
 com\novasemp\cnpj\ml\service\FeatureEngineering.class
+com\novasemp\cnpj\util\CacheManager$CacheEntry.class
 com\novasemp\cnpj\model\Empresa.class
+com\novasemp\cnpj\util\CacheManager.class
 com\novasemp\cnpj\TesteBanco.class
 com\novasemp\cnpj\MapeamentoCnpj.class
 com\novasemp\cnpj\ml\repository\TrainingDataRepository.class
