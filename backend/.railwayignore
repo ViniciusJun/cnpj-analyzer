@@ -1,0 +1,9 @@
+# Dados grandes - NÃO enviar para deploy
+data/
+*.db
+*.csv
+*.zip
+target/
+*.jar
+.DS_Store
+.git/
