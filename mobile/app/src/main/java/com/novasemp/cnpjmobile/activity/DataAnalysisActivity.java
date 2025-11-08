@@ -1,6 +1,5 @@
 package com.novasemp.cnpjmobile.activity;
 
-
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Spannable;
@@ -21,7 +20,6 @@ import com.novasemp.cnpjmobile.model.HistoricoBusca;
 import com.novasemp.cnpjmobile.model.PredicaoResponse;
 import com.novasemp.cnpjmobile.service.ApiService;
 import com.novasemp.cnpjmobile.service.RetrofitClient;
-import com.novasemp.cnpjmobile.util.HistoricoLocalManager;
 import com.novasemp.cnpjmobile.util.SessionManager;
 
 import java.util.ArrayList;
@@ -41,38 +39,31 @@ public class DataAnalysisActivity extends AppCompatActivity {
     private TextView textViewResultados;
     private ApiService apiService;
     private SessionManager sessionManager;
-    private HistoricoLocalManager historicoLocalManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         System.out.println("DEBUG: DataAnalysisActivity - onCreate iniciado");
-        historicoLocalManager = new HistoricoLocalManager(this);
 
         try {
             System.out.println("DEBUG: Tentando carregar layout...");
             setContentView(R.layout.activity_data_analysis);
             System.out.println("DEBUG: Layout carregado com sucesso");
 
-            // Inicializar SessionManager
             sessionManager = new SessionManager(this);
             System.out.println("DEBUG: DataAnalysisActivity - SessionManager inicializado");
 
-            // Inicializar componentes UI PRIMEIRO (sem dependências externas)
             initializeUIComponents();
             System.out.println("DEBUG: Componentes UI inicializados");
 
-            // Configurar listeners
             setupButtonListeners();
             System.out.println("DEBUG: Listeners configurados");
 
-            // Tentar inicializar ApiService APÓS a UI estar pronta
             System.out.println("DEBUG: Tentando inicializar ApiService...");
             try {
                 apiService = RetrofitClient.getApiService();
                 System.out.println("DEBUG: ApiService inicializado: " + (apiService != null));
 
-                // ✅ NOVA LINHA: Chamar o teste do endpoint ML
                 if (apiService != null) {
                     System.out.println("DEBUG: Iniciando teste do endpoint ML...");
                     testarEndpointML();
@@ -83,7 +74,6 @@ public class DataAnalysisActivity extends AppCompatActivity {
             } catch (Exception e) {
                 System.out.println("DEBUG: AVISO - ApiService não pôde ser inicializado: " + e.getMessage());
                 apiService = null;
-                // Não crasha a app, apenas mostra aviso
                 Toast.makeText(this, "Funcionalidade online indisponível. Usando modo offline.", Toast.LENGTH_LONG).show();
             }
 
@@ -110,7 +100,6 @@ public class DataAnalysisActivity extends AppCompatActivity {
             return;
         }
 
-        // Testar com dados de exemplo
         Call<PredicaoResponse> testCall = apiService.getPredicao("4711301", "3550308", 50000.0);
 
         testCall.enqueue(new Callback<PredicaoResponse>() {
@@ -185,12 +174,10 @@ public class DataAnalysisActivity extends AppCompatActivity {
             }
         }
 
-        // Mostrar ProgressBar e desabilitar botão
         progressBar.setVisibility(View.VISIBLE);
         buttonAnalisar.setEnabled(false);
-        textViewResultados.setText(""); // Limpar resultados anteriores
+        textViewResultados.setText("");
 
-        // Criar cópias finais para usar no callback
         final String finalCnae = cnae;
         final String finalMunicipio = municipio;
         final double finalCapital = capital;
@@ -199,16 +186,17 @@ public class DataAnalysisActivity extends AppCompatActivity {
         buttonAnalisar.setEnabled(false);
         progressBar.setVisibility(View.VISIBLE);
 
-        // Se ApiService não está disponível, usar apenas simulação
         if (apiService == null) {
             System.out.println("DEBUG: ApiService não disponível - usando modo simulador");
-            double finalCapital1 = capital;
             new android.os.Handler().postDelayed(() -> {
-                String simulationResult = simulateAdvancedAnalysis(cnae, municipio, finalCapital1);
+                String simulationResult = simulateAdvancedAnalysis(cnae, municipio, finalCapital);
                 textViewResultados.setText("Modo Offline - Dados Simulados:\n\n" + simulationResult);
                 buttonAnalisar.setEnabled(true);
-                progressBar.setVisibility(View.VISIBLE);
-            }, 2000); // Simular delay de 2 segundos
+                progressBar.setVisibility(View.GONE);
+
+                // APENAS SALVAR NO HISTÓRICO - NÃO ABRIR DASHBOARD
+                salvarAnaliseNoHistorico(finalCnae, finalMunicipio, finalCapital);
+            }, 2000);
             return;
         }
 
@@ -230,18 +218,15 @@ public class DataAnalysisActivity extends AppCompatActivity {
 
                 if (response.isSuccessful() && response.body() != null) {
                     PredicaoResponse predicaoResponse = response.body();
-                    predicaoResponse.logDebug(); // Novo log detalhado
+                    predicaoResponse.logDebug();
 
                     if (predicaoResponse.isSuccess() && predicaoResponse.getData() != null) {
                         System.out.println("DEBUG: ✅ Predição ML bem-sucedida!");
                         displayPredictionResults(predicaoResponse);
-
-                        // Salvar no histórico como predição ML real
-                        Double capitalObj = capital == 0.0 ? null : capital;
-                        salvarAnaliseAvancadaNoHistorico(cnae, municipio, capitalObj, "PREDICAO_ML_REAL");
+                        // APENAS SALVAR NO HISTÓRICO - NÃO ABRIR DASHBOARD
+                        salvarAnaliseNoHistorico(cnae, municipio, capital);
                     } else {
                         System.out.println("DEBUG: Predição ML retornou success=false, usando predição local...");
-                        // Se ML falhou, tentar obter dados do dashboard para predição local
                         obterDadosParaPredicaoLocal(cnae, municipio, capital);
                     }
                 } else {
@@ -271,18 +256,19 @@ public class DataAnalysisActivity extends AppCompatActivity {
                     DashboardData dashboardData = response.body();
                     System.out.println("DEBUG: Dados do dashboard obtidos para predição local");
 
-                    // Criar predição local baseada nos dados do dashboard
                     PredicaoResponse predicaoLocal = criarPredicaoLocal(dashboardData, cnae, municipio, capital);
                     displayPredictionResults(predicaoLocal);
 
-                    // Salvar no histórico como predição local
-                    Double capitalObj = capital == 0.0 ? null : capital;
-                    salvarAnaliseAvancadaNoHistorico(cnae, municipio, capitalObj, "PREDICAO_LOCAL");
+                    // APENAS SALVAR NO HISTÓRICO - NÃO ABRIR DASHBOARD
+                    salvarAnaliseNoHistorico(cnae, municipio, capital);
                 } else {
                     System.out.println("DEBUG: Falha ao obter dados do dashboard - usando simulação básica");
                     String simulationResult = simulateAdvancedAnalysis(cnae, municipio, capital);
                     textViewResultados.setText("📊 ANÁLISE PREDITIVA (Simulação)\n\n" + simulationResult);
                     buttonAnalisar.setEnabled(true);
+
+                    // APENAS SALVAR NO HISTÓRICO - NÃO ABRIR DASHBOARD
+                    salvarAnaliseNoHistorico(cnae, municipio, capital);
                 }
             }
 
@@ -292,6 +278,9 @@ public class DataAnalysisActivity extends AppCompatActivity {
                 String simulationResult = simulateAdvancedAnalysis(cnae, municipio, capital);
                 textViewResultados.setText("📊 ANÁLISE PREDITIVA (Simulação)\n\n" + simulationResult);
                 buttonAnalisar.setEnabled(true);
+
+                // APENAS SALVAR NO HISTÓRICO - NÃO ABRIR DASHBOARD
+                salvarAnaliseNoHistorico(cnae, municipio, capital);
             }
         });
     }
@@ -305,51 +294,16 @@ public class DataAnalysisActivity extends AppCompatActivity {
         PredicaoResponse.PredicaoData data = response.getData();
 
         StringBuilder results = new StringBuilder();
-
-        // Extrair a classificação do resultado para colorir
-        String classificacao = data.getClassificacao();
-        SpannableStringBuilder spannableResults = new SpannableStringBuilder(results.toString());
-
-        // Encontrar a posição da classificação no texto
-        int startIndex = results.indexOf("CLASSIFICAÇÃO: ");
-        if (startIndex != -1) {
-            startIndex += "CLASSIFICAÇÃO: ".length();
-            int endIndex = results.indexOf("\n", startIndex);
-            if (endIndex == -1) endIndex = results.length();
-
-            // Definir cor baseada na classificação
-            int corClassificacao;
-            switch (classificacao != null ? classificacao.toUpperCase() : "") {
-                case "ALTA":
-                    corClassificacao = Color.parseColor("#4CAF50"); // Verde
-                    break;
-                case "MODERADA":
-                    corClassificacao = Color.parseColor("#FF9800"); // Laranja
-                    break;
-                case "BAIXA":
-                    corClassificacao = Color.parseColor("#F44336"); // Vermelho
-                    break;
-                default:
-                    corClassificacao = Color.parseColor("#757575"); // Cinza
-            }
-
-            // Aplicar a cor ao texto
-            spannableResults.setSpan(new ForegroundColorSpan(corClassificacao),
-                    startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-
-        textViewResultados.setText(spannableResults);
         results.append("🎯 PREDIÇÃO COM MACHINE LEARNING\n\n");
 
-        // Adicionar cor baseada na probabilidade
         double probabilidade = data.getProbabilidadeSucesso();
         String corProbabilidade;
         if (probabilidade >= 0.7) {
-            corProbabilidade = "🟢"; // Verde
+            corProbabilidade = "🟢";
         } else if (probabilidade >= 0.5) {
-            corProbabilidade = "🟡"; // Amarelo
+            corProbabilidade = "🟡";
         } else {
-            corProbabilidade = "🔴"; // Vermelho
+            corProbabilidade = "🔴";
         }
 
         results.append("📊 PROBABILIDADE DE SUCESSO: ")
@@ -359,7 +313,6 @@ public class DataAnalysisActivity extends AppCompatActivity {
                 .append(" ")
                 .append(String.format("%.1f", probabilidade * 100))
                 .append("%\n");
-
 
         results.append("🏷️ CLASSIFICAÇÃO: ").append(data.getClassificacao()).append("\n\n");
 
@@ -385,23 +338,40 @@ public class DataAnalysisActivity extends AppCompatActivity {
 
         results.append("💡 RECOMENDAÇÃO:\n").append(data.getRecomendacao());
 
-        textViewResultados.setText(results.toString());
+        SpannableStringBuilder spannableResults = new SpannableStringBuilder(results.toString());
+
+        String classificacao = data.getClassificacao();
+        int startIndex = results.indexOf("CLASSIFICAÇÃO: ");
+        if (startIndex != -1) {
+            startIndex += "CLASSIFICAÇÃO: ".length();
+            int endIndex = results.indexOf("\n", startIndex);
+            if (endIndex == -1) endIndex = results.length();
+
+            int corClassificacao;
+            switch (classificacao != null ? classificacao.toUpperCase() : "") {
+                case "ALTA":
+                    corClassificacao = Color.parseColor("#4CAF50");
+                    break;
+                case "MODERADA":
+                    corClassificacao = Color.parseColor("#FF9800");
+                    break;
+                case "BAIXA":
+                    corClassificacao = Color.parseColor("#F44336");
+                    break;
+                default:
+                    corClassificacao = Color.parseColor("#757575");
+            }
+
+            spannableResults.setSpan(new ForegroundColorSpan(corClassificacao),
+                    startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+
+        textViewResultados.setText(spannableResults);
         buttonAnalisar.setEnabled(true);
-
-        // SALVAR NO HISTÓRICO
-        String cnae = editTextCnae.getText().toString().trim();
-        String municipio = editTextMunicipio.getText().toString().trim();
-        String capitalStr = editTextCapital.getText().toString().trim();
-        Double capital = capitalStr.isEmpty() ? null : Double.parseDouble(capitalStr);
-
-        salvarAnaliseAvancadaNoHistorico(cnae, municipio, capital, "PREDICAO_ML");
-
         progressBar.setVisibility(View.GONE);
-        buttonAnalisar.setEnabled(true);
     }
 
     private void fetchDashboardDataAsFallback(String cnae, String municipio, double capital) {
-        // Fallback: buscar dados do dashboard
         Call<DashboardData> dashboardCall = apiService.getDashboardData(cnae, municipio);
 
         dashboardCall.enqueue(new Callback<DashboardData>() {
@@ -412,25 +382,31 @@ public class DataAnalysisActivity extends AppCompatActivity {
                     String simulationResult = createEnhancedSimulation(cnae, municipio, capital, dashboardData);
                     textViewResultados.setText("📊 ANÁLISE AVANÇADA (Dados Consolidados)\n\n" + simulationResult);
 
-                    // SALVAR NO HISTÓRICO
-                    Double capitalObj = capital == 0.0 ? null : capital;
-                    salvarAnaliseAvancadaNoHistorico(cnae, municipio, capitalObj, "ANALISE_AVANCADA_DASHBOARD");
+                    // APENAS SALVAR NO HISTÓRICO - NÃO ABRIR DASHBOARD
+                    salvarAnaliseNoHistorico(cnae, municipio, capital);
                 } else {
-                    // ... código existente
+                    String simulationResult = simulateAdvancedAnalysis(cnae, municipio, capital);
+                    textViewResultados.setText("📊 ANÁLISE PREDITIVA (Simulação)\n\n" + simulationResult);
+
+                    // APENAS SALVAR NO HISTÓRICO - NÃO ABRIR DASHBOARD
+                    salvarAnaliseNoHistorico(cnae, municipio, capital);
                 }
                 buttonAnalisar.setEnabled(true);
             }
 
             @Override
             public void onFailure(Call<DashboardData> call, Throwable t) {
-                // ... código existente
+                String simulationResult = simulateAdvancedAnalysis(cnae, municipio, capital);
+                textViewResultados.setText("📊 ANÁLISE PREDITIVA (Simulação)\n\n" + simulationResult);
                 buttonAnalisar.setEnabled(true);
+
+                // APENAS SALVAR NO HISTÓRICO - NÃO ABRIR DASHBOARD
+                salvarAnaliseNoHistorico(cnae, municipio, capital);
             }
         });
     }
 
     private String createEnhancedSimulation(String cnae, String municipio, double capital, DashboardData dashboardData) {
-        // Usar dados reais do dashboard quando disponíveis
         int totalEmpresas = dashboardData.getQuantidadeEmpresas();
         double capitalMedio = dashboardData.getCapitalSocialMedio();
         double probabilidadeSucesso = dashboardData.getProbabilidadeSucesso();
@@ -499,21 +475,17 @@ public class DataAnalysisActivity extends AppCompatActivity {
 
         PredicaoResponse.PredicaoData data = new PredicaoResponse.PredicaoData();
 
-        // Calcular probabilidade baseada nos dados do dashboard
         double probabilidadeBase = dashboardData.getProbabilidadeSucesso();
         int totalEmpresas = dashboardData.getQuantidadeEmpresas();
         double capitalMedio = dashboardData.getCapitalSocialMedio();
 
-        // Ajustar probabilidade baseada em fatores locais
         double probabilidadeAjustada = calcularProbabilidadeAjustada(probabilidadeBase, totalEmpresas, capitalMedio, capital);
         data.setProbabilidadeSucesso(probabilidadeAjustada);
 
-        // Determinar classificação
         data.setClassificacao(determinarClassificacao(probabilidadeAjustada));
         data.setEmpresasSimilares(totalEmpresas);
         data.setCapitalMedio(capitalMedio);
 
-        // Gerar fatores baseados nos dados
         data.setFatoresPositivos(gerarFatoresPositivos(totalEmpresas, capitalMedio));
         data.setFatoresNegativos(gerarFatoresNegativos(totalEmpresas, capitalMedio));
         data.setRecomendacao(gerarRecomendacaoLocal(probabilidadeAjustada, totalEmpresas, capital));
@@ -525,19 +497,17 @@ public class DataAnalysisActivity extends AppCompatActivity {
     private double calcularProbabilidadeAjustada(double probabilidadeBase, int totalEmpresas, double capitalMedio, double capitalUsuario) {
         double ajuste = 0.0;
 
-        // Ajuste baseado no número de empresas (mais empresas = mais competição)
         if (totalEmpresas < 50) {
-            ajuste += 0.1; // Mercado pouco explorado
+            ajuste += 0.1;
         } else if (totalEmpresas > 200) {
-            ajuste -= 0.05; // Mercado saturado
+            ajuste -= 0.05;
         }
 
-        // Ajuste baseado no capital
         if (capitalUsuario > 0) {
             if (capitalUsuario > capitalMedio * 1.5) {
-                ajuste += 0.15; // Capital acima da média
+                ajuste += 0.15;
             } else if (capitalUsuario < capitalMedio * 0.5) {
-                ajuste -= 0.1; // Capital abaixo da média
+                ajuste -= 0.1;
             }
         }
 
@@ -593,8 +563,8 @@ public class DataAnalysisActivity extends AppCompatActivity {
         }
     }
 
-    private void salvarAnaliseAvancadaNoHistorico(String cnae, String municipio, Double capital, String tipoAnalise) {
-        System.out.println("DEBUG: DataAnalysisActivity - Salvando análise avançada no histórico");
+    private void salvarAnaliseNoHistorico(String cnae, String municipio, double capital) {
+        System.out.println("DEBUG: DataAnalysisActivity - Salvando ANÁLISE AVANÇADA no histórico");
 
         String sessionId = sessionManager.getSessionId();
 
@@ -603,7 +573,6 @@ public class DataAnalysisActivity extends AppCompatActivity {
         System.out.println("DEBUG:   CNAE: " + cnae);
         System.out.println("DEBUG:   Municipio: " + municipio);
         System.out.println("DEBUG:   Capital: " + capital);
-        System.out.println("DEBUG:   TipoAnálise: " + tipoAnalise);
 
         if (sessionId == null || sessionId.isEmpty()) {
             System.out.println("DEBUG: DataAnalysisActivity - ERRO: SessionId é nulo ou vazio!");
@@ -615,25 +584,15 @@ public class DataAnalysisActivity extends AppCompatActivity {
             return;
         }
 
-        // Se capital for nulo, usar 0.0
-        double capitalParaHistorico = capital != null ? capital : 0.0;
-
         try {
             HistoricoBusca historico = new HistoricoBusca();
             historico.setSessionId(sessionId);
             historico.setCnae(cnae);
             historico.setMunicipio(municipio);
-            historico.setCapitalSocial(capitalParaHistorico);
-            historico.setTipoAnalise(tipoAnalise);
+            historico.setCapitalSocial(capital);
             historico.setDataBuscaAtual();
 
-            System.out.println("DEBUG: DataAnalysisActivity - Análise avançada salva no histórico: " + tipoAnalise);
-
-            // SALVAR LOCALMENTE O TIPO DE ANÁLISE
-            String chave = HistoricoLocalManager.gerarChave(sessionId, cnae, municipio, historico.getDataBusca());
-            historicoLocalManager.salvarTipoAnalise(chave, tipoAnalise);
-
-            System.out.println("DEBUG: DataAnalysisActivity - Chamando API para salvar histórico...");
+            System.out.println("DEBUG: DataAnalysisActivity - Análise avançada salva no histórico");
 
             RetrofitClient.getApiService().salvarHistorico(historico).enqueue(new Callback<Void>() {
                 @Override
@@ -643,7 +602,7 @@ public class DataAnalysisActivity extends AppCompatActivity {
                     System.out.println("DEBUG:   Sucesso: " + response.isSuccessful());
 
                     if (response.isSuccessful()) {
-                        System.out.println("DEBUG: DataAnalysisActivity - ✅ Análise avançada salva no histórico com SUCESSO!");
+                        System.out.println("DEBUG: DataAnalysisActivity - ✅ ANÁLISE AVANÇADA salva no histórico com SUCESSO!");
                     } else {
                         System.out.println("DEBUG: DataAnalysisActivity - ❌ Erro ao salvar análise avançada no histórico. Código: " + response.code());
                     }

@@ -12,10 +12,8 @@ public class HistoricoBusca {
     private String sessionId;
     private String cnae;
     private String municipio;
-    private Double capitalSocial = 0.0; // Inicializar com 0.0 para evitar null
+    private Double capitalSocial = 0.0;
     private String dataBusca;
-    @SerializedName("tipoAnalise")
-    private String tipoAnalise;
 
     // Construtores
     public HistoricoBusca() {}
@@ -48,14 +46,13 @@ public class HistoricoBusca {
     public void setDataBusca(String dataBusca) { this.dataBusca = dataBusca; }
 
     public void setDataBuscaAtual() {
-        // Tentar diferentes formatos que o backend pode aceitar
         String[] formatos = {
-                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",  // ISO com milliseconds
-                "yyyy-MM-dd'T'HH:mm:ss'Z'",       // ISO sem milliseconds
-                "yyyy-MM-dd HH:mm:ss",            // Formato SQL
-                "yyyy-MM-dd",                     // Apenas data
-                "dd/MM/yyyy HH:mm:ss",            // Formato brasileiro
-                "MM/dd/yyyy HH:mm:ss"             // Formato americano
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                "yyyy-MM-dd HH:mm:ss",
+                "yyyy-MM-dd",
+                "dd/MM/yyyy HH:mm:ss",
+                "MM/dd/yyyy HH:mm:ss"
         };
 
         for (String formato : formatos) {
@@ -66,22 +63,13 @@ public class HistoricoBusca {
                 }
                 this.dataBusca = sdf.format(new Date());
                 System.out.println("DEBUG: HistoricoBusca - Data formatada com '" + formato + "': " + this.dataBusca);
-                return; // Se funcionou, sair do loop
+                return;
             } catch (Exception e) {
                 System.out.println("DEBUG: HistoricoBusca - Formato '" + formato + "' falhou: " + e.getMessage());
             }
         }
 
-        // Se todos os formatos falharem, usar timestamp
         this.dataBusca = String.valueOf(System.currentTimeMillis());
         System.out.println("DEBUG: HistoricoBusca - Usando timestamp: " + this.dataBusca);
-    }
-
-    public String getTipoAnalise() {
-        return tipoAnalise;
-    }
-
-    public void setTipoAnalise(String tipoAnalise) {
-        this.tipoAnalise = tipoAnalise;
     }
 }

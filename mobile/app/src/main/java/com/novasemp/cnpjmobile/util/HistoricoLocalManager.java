@@ -39,11 +39,6 @@ public class HistoricoLocalManager {
         return map != null ? map : new HashMap<>();
     }
 
-    public void limparTodosTiposAnalise() {
-        sharedPreferences.edit().remove(KEY_TIPOS_ANALISE).apply();
-        System.out.println("DEBUG: HistoricoLocalManager - Todos os tipos de análise foram limpos");
-    }
-
     // Gerar chave única baseada nos dados da busca
     public static String gerarChave(String sessionId, String cnae, String municipio, String dataBusca) {
         // Simplificar a chave - remover espaços e caracteres especiais
@@ -64,6 +59,10 @@ public class HistoricoLocalManager {
         return chave;
     }
 
+    public void limparTodosTiposAnalise() {
+        sharedPreferences.edit().remove(KEY_TIPOS_ANALISE).apply();
+        System.out.println("DEBUG: HistoricoLocalManager - Todos os tipos de análise foram limpos");
+    }
     public void debugTodosTiposAnalise() {
         Map<String, String> map = getTodosTiposAnalise();
         System.out.println("DEBUG: HistoricoLocalManager - Todos os tipos armazenados:");
