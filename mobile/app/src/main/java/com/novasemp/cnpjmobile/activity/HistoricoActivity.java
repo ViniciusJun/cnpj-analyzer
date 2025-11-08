@@ -182,10 +182,13 @@ public class HistoricoActivity extends AppCompatActivity {
 
     private void abrirDashboard(HistoricoBusca historico) {
         Intent intent = new Intent(this, DashboardActivity.class);
-        intent.putExtra("CNAE", historico.getCnae());
-        intent.putExtra("MUNICIPIO", historico.getMunicipio());
+        // ✅ CORREÇÃO: Usar as mesmas chaves do MainActivity
+        intent.putExtra("cnae", historico.getCnae());
+        intent.putExtra("municipio", historico.getMunicipio());
         if (historico.getCapitalSocial() != null) {
-            intent.putExtra("CAPITAL", historico.getCapitalSocial());
+            intent.putExtra("capitalSocial", historico.getCapitalSocial()); // ✅ CORRIGIDO: "capitalSocial"
+        } else {
+            intent.putExtra("capitalSocial", 0.0);
         }
         startActivity(intent);
     }

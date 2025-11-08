@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
+import java.io.File;
 
 public class Api {
 
@@ -45,8 +46,26 @@ public class Api {
     }
 
     public static void main(String[] args) {
-        // Configurar o banco de dados
+        // CONFIGURAÇÃO PARA PRODUÇÃO NO RAILWAY
+        // ======================================
+        
+        // Porta dinâmica para Railway - usar final
+        final int port;
+        if (System.getenv("PORT") != null) {
+            port = Integer.parseInt(System.getenv("PORT"));
+        } else {
+            port = 8080;
+        }
+        
+        // Configurar caminho do banco para produção
         String dbPath = "data/processed/cnpj_data.db";
+        
+        // Garantir que diretórios existam
+        new File("data/processed").mkdirs();
+        
+        System.out.println("🚀 Iniciando CNPJ Analyzer Backend...");
+        System.out.println("📍 Porta: " + port);
+        System.out.println("🗃️  Banco: " + dbPath);
         
         final EmpresaDAO[] empresaDAOHolder = new EmpresaDAO[1];
         final MLModelService[] mlServiceHolder = new MLModelService[1];
@@ -85,11 +104,12 @@ public class Api {
         Gson gson = new Gson();
         final CacheManager cacheManager = CacheManager.getInstance();
 
-        // Configurar porta
-        Spark.port(8081);
-        Spark.ipAddress("0.0.0.0");
+        // CONFIGURAÇÃO SPARK PARA PRODUÇÃO
+        // ================================
+        Spark.port(port);
+        Spark.ipAddress("0.0.0.0"); // Importante para Railway
 
-        // Configurar CORS
+        // Configurar CORS para produção
         Spark.options("/*", (request, response) -> {
             String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
             if (accessControlRequestHeaders != null) {
@@ -127,21 +147,39 @@ public class Api {
             response.body(gson.toJson(errorResponse));
         });
 
-        // Endpoint de health check
+        // ENDPOINT DE HEALTH CHECK MELHORADO
+        // ===================================
         Spark.get("/health", (req, res) -> {
             res.type("application/json");
             
             Map<String, Object> health = new HashMap<>();
             health.put("status", "API funcionando");
+            health.put("service", "CNPJ Analyzer Backend");
+            health.put("version", "1.0.0");
+            health.put("environment", "production");
             health.put("ml_online", mlServiceHolder[0] != null && mlServiceHolder[0].isModeloTreinado());
             health.put("ml_status", mlServiceHolder[0] != null ? mlServiceHolder[0].getStatus() : "NÃO INICIALIZADO");
             health.put("database", empresaDAOHolder[0] != null ? "CONECTADO" : "ERRO");
             health.put("timestamp", System.currentTimeMillis());
+            health.put("port", port); // ✅ Agora pode usar port porque é final
+            
+            // Verificar banco
+            try {
+                String testSql = "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'";
+                try (Statement stmt = empresaDAOHolder[0].getConnection().createStatement();
+                     ResultSet rs = stmt.executeQuery(testSql)) {
+                    if (rs.next()) {
+                        health.put("database_tables", rs.getInt("count"));
+                    }
+                }
+            } catch (Exception e) {
+                health.put("database_error", e.getMessage());
+            }
             
             return gson.toJson(health);
         });
 
-        // Endpoint de diagnóstico ML
+        // Endpoint de diagnóstico ML (mantido igual)
         Spark.get("/debug/ml", (req, res) -> {
             Map<String, Object> debugInfo = new HashMap<>();
             
@@ -176,7 +214,7 @@ public class Api {
             return gson.toJson(debugInfo);
         });
 
-        // Endpoint específico para análise ML
+        // Endpoint específico para análise ML (mantido igual)
         Spark.get("/ml/predicao", (req, res) -> {
             String cnae = req.queryParams("cnae");
             String municipio = req.queryParams("municipio");
@@ -242,7 +280,7 @@ public class Api {
             }
         });
 
-        // Endpoint para análise de mercado
+        // Endpoint para análise de mercado (mantido igual)
         Spark.get("/ml/analise-mercado", (req, res) -> {
             String cnae = req.queryParams("cnae");
             String municipio = req.queryParams("municipio");
@@ -291,7 +329,7 @@ public class Api {
             }
         });
 
-        // Endpoint de tendência
+        // Endpoint de tendência (mantido igual)
         Spark.get("/ml/tendencia-setor", (req, res) -> {
             String cnae = req.queryParams("cnae");
             
@@ -311,7 +349,7 @@ public class Api {
             return gson.toJson(tendencia);
         });
 
-        // Endpoint de feedback
+        // Endpoint de feedback (mantido igual)
         Spark.post("/ml/feedback", (req, res) -> {
             String cnae = req.queryParams("cnae");
             String municipio = req.queryParams("municipio");
@@ -329,7 +367,7 @@ public class Api {
             return gson.toJson(response);
         });
 
-        // Endpoints de histórico
+        // Endpoints de histórico (mantidos iguais)
         Spark.post("/historico", (req, res) -> {
             try {
                 HistoricoBusca historico = gson.fromJson(req.body(), HistoricoBusca.class);
@@ -412,7 +450,7 @@ public class Api {
             }
         });
 
-        // Endpoint dashboard
+        // Endpoint dashboard (mantido igual)
         Spark.get("/dashboard", (req, res) -> {
             String cnae = req.queryParams("cnae");
             String municipio = req.queryParams("municipio");
@@ -507,7 +545,8 @@ public class Api {
             }
         });
 
-        System.out.println("\n🎉 API CNPJ Analyzer rodando em http://localhost:8081");
+        System.out.println("\n🎉 API CNPJ Analyzer rodando na porta: " + port);
+        System.out.println("🚀 PRONTO PARA PRODUÇÃO NO RAILWAY!");
         System.out.println("📊 Status do ML: " + (mlServiceHolder[0] != null ? mlServiceHolder[0].getStatus() : "NÃO INICIALIZADO"));
         System.out.println("\n🔗 Endpoints disponíveis:");
         System.out.println("  GET  /health                          - Status da API");
@@ -531,5 +570,4 @@ public class Api {
     private static String analisarTendencia(String cnae, String municipio) {
         return "CRESCIMENTO_MODERADO";
     }
-
 }

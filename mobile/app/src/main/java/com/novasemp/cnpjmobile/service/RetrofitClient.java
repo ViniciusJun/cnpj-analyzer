@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 public class RetrofitClient {
 
-    // ✅ VERIFICAR: URL sem /api no final
-    private static final String BASE_URL = "http://10.0.2.2:8081/"; // Para emulador
+    // ✅ URL CORRETA para produção
+    private static final String BASE_URL = "https://cnpj-analyzer-backend.up.railway.app/";
 
     private static Retrofit retrofit = null;
 
@@ -34,7 +34,8 @@ public class RetrofitClient {
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
 
-            Log.d("RetrofitClient", "Base URL configurada: " + BASE_URL);
+            // ✅ LOG CORRIGIDO
+            Log.d("RetrofitClient", "✅ Retrofit configurado para: " + BASE_URL);
         }
         return retrofit.create(ApiService.class);
     }

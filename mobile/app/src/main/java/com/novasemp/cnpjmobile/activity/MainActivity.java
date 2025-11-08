@@ -101,8 +101,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void abrirDashboard() {
-        // Dashboard geral sem parâmetros específicos
+        // ✅ CORREÇÃO: Dashboard com dados válidos mesmo quando vazio
+        String cnae = editCnae.getText().toString().trim();
+        String municipio = editMunicipio.getText().toString().trim();
+        String capitalStr = editCapitalSocial.getText().toString().trim();
+
+        if (cnae.isEmpty() || municipio.isEmpty()) {
+            // Usar valores de exemplo para demonstração
+            cnae = "4721102"; // CNAE exemplo: Comércio varejista
+            municipio = "3550308"; // São Paulo
+            Toast.makeText(this, "Usando dados de exemplo para demonstração", Toast.LENGTH_SHORT).show();
+        }
+
+        double capitalSocial = capitalStr.isEmpty() ? 50000.0 : Double.parseDouble(capitalStr);
+
         Intent intent = new Intent(this, DashboardActivity.class);
+        intent.putExtra("cnae", cnae);
+        intent.putExtra("municipio", municipio);
+        intent.putExtra("capitalSocial", capitalSocial);
         startActivity(intent);
     }
 

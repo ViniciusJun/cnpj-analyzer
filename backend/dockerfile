@@ -6,10 +6,9 @@ RUN mvn clean package -DskipTests
 
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY --from=build /app/target/cnpj-analyzer-1.0.jar app.jar
-COPY data/ ./data/
+COPY --from=build /app/target/cnpj-analyzer-1.0-SNAPSHOT.jar app.jar
 
-# Criar diretório para dados se não existir
+# Criar diretório para dados
 RUN mkdir -p data/processed
 
 EXPOSE 8080
