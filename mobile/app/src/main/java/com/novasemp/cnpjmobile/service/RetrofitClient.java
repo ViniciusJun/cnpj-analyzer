@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 public class RetrofitClient {
 
     // ✅ URL CORRETA para produção
-    private static final String BASE_URL = "https://cnpj-analyzer-backend.up.railway.app/";
+    private static final String BASE_URL = "https://cnpj-analyser-production.up.railway.app/";
 
     private static Retrofit retrofit = null;
 
